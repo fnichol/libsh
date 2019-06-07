@@ -52,6 +52,7 @@ for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
 dual licensed as above, without any additional terms or conditions.
 
 [fnichol]: https://github.com/fnichol
+[issues]: https://github.com/fnichol/libsh/issues
 [license-apachev2]: https://github.com/fnichol/libsh/blob/master/LICENSE-APACHE
 [license-mit]: https://github.com/fnichol/libsh/blob/master/LICENSE-MIT
 [POSIX shell]: http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html
