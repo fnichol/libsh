@@ -1,5 +1,6 @@
 SHUNIT2_VERSION := 2.1.7
 
+SHELL_BIN ?= sh
 SH_SOURCES := $(shell find . -type f -name '*.sh' -not -path './tmp/*')
 SH_TESTS := $(shell find tests -type f -name '*_test.sh')
 BASH_TESTS := $(shell find tests -type f -name '*_test.bash')
@@ -16,12 +17,14 @@ test: test-sh test-bash ## Runs all tests
 
 test-sh: testtools dl-shunit2 ## Runs all POSIX shell tests
 	@echo "--- $@"
-	for test in $(SH_TESTS); do echo; echo "Running: $$test"; sh $$test; done
+	for test in $(SH_TESTS); do \
+		echo; echo "Running: $$test"; $(SHELL_BIN) $$test; done
 .PHONY: test-sh
 
 test-bash: testtools dl-shunit2 ## Runs all Bash shell tests
 	@echo "--- $@"
-	for test in $(BASH_TESTS); do echo; echo "Running: $$test"; sh $$test; done
+	for test in $(BASH_TESTS); do \
+		echo; echo "Running: $$test"; $(SHELL_BIN) $$test; done
 .PHONY: test-bash
 
 check: shellcheck shfmt ## Checks all linting, styling, & other rules
