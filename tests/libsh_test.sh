@@ -270,8 +270,10 @@ createGitRepo() {
   git init --quiet "$tmppath/$1"
   cd "$tmppath/$1" || return 1
   touch README.md
+  git config user.name "Nobody"
+  git config user.email "nobody@example.com"
   git add README.md
-  git commit --quiet -m 'First commit' --date=2000-01-02T03:04:05
+  git commit --quiet --message='First commit' --date=2000-01-02T03:04:05
 
   short_sha="$(git show -s --format=%h)"
   long_sha="$(git show -s --format=%H)"
