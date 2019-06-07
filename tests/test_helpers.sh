@@ -145,9 +145,19 @@ run_in_sh_script() {
 }
 
 stripAnsi() {
-  # The `sed` implementation on macOS does not support either `\x1b` nor the
-  # `-r` flag, therefore we'll emit the correct byte with a `printf` subshell.
-  sed 's,'"$(printf "\x1b")"'\[[0-9;]*[a-zA-Z],,g'
+  case "$(uname -s)" in
+    FreeBSD)
+      gsed -r 's,\x1B\[[0-9;]*[a-zA-Z],,g'
+      ;;
+    *)
+      # The `sed` implementation on macOS does not support either `\x1b` nor
+      # the `-r` flag, and dash has a bug
+      # (https://bugs.launchpad.net/ubuntu/+source/dash/+bug/1499473) where
+      # `\xNN` hex bytes can't be printed, therefore we'll emit the correct
+      # byte in octal with a `printf` subshell.
+      sed 's,'"$(printf "\033")"'\[[0-9;]*[a-zA-Z],,g'
+      ;;
+  esac
 }
 
 shell_compat() {
