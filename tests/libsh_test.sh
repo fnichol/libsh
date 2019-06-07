@@ -20,7 +20,7 @@ testCleanupFile() {
   file="$(mktemp_file)"
   run cleanup_file "$file"
 
-  assertTrue 'cleanup_file failed' "$status"
+  assertTrue 'cleanup_file failed' "$return_status"
   assertEquals "$(cat "$__CLEANUP_FILES__")" "$file"
   assertTrue 'files could not be removed' "rm '$__CLEANUP_FILES__' '$file'"
 
@@ -34,7 +34,7 @@ testCleanupFileNoVar() {
   file="$(mktemp_file)"
   run cleanup_file "$file"
 
-  assertTrue 'cleanup_file failed' "$status"
+  assertTrue 'cleanup_file failed' "$return_status"
   assertEquals "$(cat "$__CLEANUP_FILES__")" "$file"
   assertTrue 'files could not be removed' "rm '$__CLEANUP_FILES__' '$file'"
 
@@ -48,7 +48,7 @@ testDieStripAnsi() {
 
   stripAnsi <"$stderr" >"$actual"
 
-  assertFalse 'fail did not fail' "$status"
+  assertFalse 'fail did not fail' "$return_status"
   # Shell string equals has issues trailing newlines, so let's use `cmp` to
   # compare byte by byte
   assertTrue 'ANSI stderr not equal' "cmp '$expected' '$actual'"
@@ -60,7 +60,7 @@ testDieAnsi() {
   export TERM=xterm
   run die 'I give up'
 
-  assertFalse 'fail did not fail' "$status"
+  assertFalse 'fail did not fail' "$return_status"
   # Shell string equals has issues with ANSI escapes, so let's use `cmp` to
   # compare byte by byte
   assertTrue 'ANSI stderr not equal' "cmp '$expected' '$stderr'"
@@ -70,7 +70,7 @@ testDieAnsi() {
 testInfoStripAnsi() {
   run info 'something is happening'
 
-  assertTrue 'info failed' "$status"
+  assertTrue 'info failed' "$return_status"
   assertStdoutStripAnsiEquals '  - something is happening'
   assertStderrNull
 }
@@ -80,7 +80,7 @@ testInfoAnsi() {
   export TERM=xterm
   run info 'something is happening'
 
-  assertTrue 'info failed' "$status"
+  assertTrue 'info failed' "$return_status"
   # Shell string equals has issues with ANSI escapes, so let's use $(cmp) to
   # compare byte by byte
   assertTrue 'ANSI stdout not equal' "cmp '$expected' '$stdout'"
@@ -90,7 +90,7 @@ testInfoAnsi() {
 testMktempFile() {
   run mktemp_file
 
-  assertTrue 'mktemp_file failed' "$status"
+  assertTrue 'mktemp_file failed' "$return_status"
   assertTrue 'result is not a file' "[ -f '$(cat "$stdout")' ]"
   assertStderrNull
   assertTrue 'temp file cannot be removed' "rm $(cat "$stdout")"
@@ -100,7 +100,7 @@ testNeedCmdPresent() {
   # The `ls` command should almost always be in `$PATH` as a program
   run need_cmd ls
 
-  assertTrue 'need_cmd failed' "$status"
+  assertTrue 'need_cmd failed' "$return_status"
   assertStdoutNull
   assertStderrNull
 }
@@ -108,7 +108,7 @@ testNeedCmdPresent() {
 testNeedCmdMissing() {
   run need_cmd __not_a_great_chance_this_will_exist__
 
-  assertFalse 'need_cmd succeeded' "$status"
+  assertFalse 'need_cmd succeeded' "$return_status"
   assertStderrStripAnsiContains 'xxx Required command'
   assertStderrStripAnsiContains 'not found on PATH'
   assertStdoutNull
@@ -202,7 +202,7 @@ release: 1.2.3"
 testSectionStripAnsi() {
   run section 'hello there'
 
-  assertTrue 'section failed' "$status"
+  assertTrue 'section failed' "$return_status"
   assertStdoutStripAnsiEquals '--- hello there'
   assertStderrNull
 }
@@ -212,7 +212,7 @@ testSectionAnsi() {
   export TERM=xterm
   run section 'hello there'
 
-  assertTrue 'section failed' "$status"
+  assertTrue 'section failed' "$return_status"
   # Shell string equals has issues with ANSI escapes, so let's use $(cmp) to
   # compare byte by byte
   assertTrue 'ANSI stdout not equal' "cmp '$expected' '$stdout'"

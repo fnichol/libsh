@@ -32,7 +32,7 @@ commonSetUp() {
   # Clean any prior test file/directory state
   rm -rf "$tmppath" "$fakebinpath"
   # Unset any prior test variable state
-  unset status
+  unset return_status
   # Unset any prior cleanup file variable
   unset __CLEANUP_FILES__
   # Create a scratch directory that will be removed on every test
@@ -121,11 +121,11 @@ run() {
   _origFlags="$-"
   set +eET
   "$@" >"$stdout" 2>"$stderr"
-  status=$?
+  return_status=$?
   set "-$_origFlags"
   unset _origFlags
 
-  return "$status"
+  return "$return_status"
 }
 
 run_in_sh_script() {
