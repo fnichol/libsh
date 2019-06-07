@@ -76,7 +76,8 @@ testInfoStripAnsi() {
 }
 
 testInfoAnsi() {
-  echo '\033[1;36;40m  - \033[1;37;40msomething is happening\033[0m' >"$expected"
+  printf -- '\033[1;36;40m  - \033[1;37;40msomething is happening\033[0m\n' \
+    >"$expected"
   export TERM=xterm
   run info 'something is happening'
 
@@ -208,7 +209,7 @@ testSectionStripAnsi() {
 }
 
 testSectionAnsi() {
-  echo '\033[1;36;40m--- \033[1;37;40mhello there\033[0m' >"$expected"
+  printf -- '\033[1;36;40m--- \033[1;37;40mhello there\033[0m\n' >"$expected"
   export TERM=xterm
   run section 'hello there'
 
