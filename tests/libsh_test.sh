@@ -179,10 +179,15 @@ commit-date: 2000-01-02"
 
 testPrintVersionNoGit() {
   createGitRepo repo
+  # Save full path to `grep`
+  GREP="$(command -v grep)"
+  export GREP
   # Temporarily clear PATH so the `git` program cannot be found
   export PATH=""
   run print_version "cool" "1.2.3"
+  # Restore PATH and unset GREP
   export PATH="$__ORIG_PATH"
+  unset GREP
 
   assertStdoutEquals "cool 1.2.3"
   assertStderrNull
@@ -190,10 +195,15 @@ testPrintVersionNoGit() {
 
 testPrintVersionNoGitVerbose() {
   createGitRepo repo
+  # Save full path to `grep`
+  GREP="$(command -v grep)"
+  export GREP
   # Temporarily clear PATH so the `git` program cannot be found
   export PATH=""
   run print_version "cool" "1.2.3" "true"
+  # Restore PATH and unset GREP
   export PATH="$__ORIG_PATH"
+  unset GREP
 
   assertStdoutEquals "cool 1.2.3
 release: 1.2.3"

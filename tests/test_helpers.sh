@@ -119,7 +119,15 @@ run() {
   # Implementation inspired by `run` in bats
   # See: https://git.io/fjCcr
   _origFlags="$-"
-  set +eET
+  set +e
+  # functrace is not supported by all shells, eg: dash
+  if set -o | "${GREP:-grep}" -q '^functrace'; then
+    set +T
+  fi
+  # errtrace is not supported by all shells, eg: ksh
+  if set -o | "${GREP:-grep}" -q '^errtrace'; then
+    set +E
+  fi
   "$@" >"$stdout" 2>"$stderr"
   return_status=$?
   set "-$_origFlags"
