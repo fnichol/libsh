@@ -150,5 +150,12 @@ stripAnsi() {
   sed 's,'"$(printf "\x1b")"'\[[0-9;]*[a-zA-Z],,g'
 }
 
+shell_compat() {
+  if [ -n "${ZSH_VERSION:-}" ]; then
+    set -o shwordsplit
+    SHUNIT_PARENT="$1"
+  fi
+}
+
 # shellcheck disable=SC2034
 shunit2="${0%/*}/../tmp/shunit2/shunit2"
