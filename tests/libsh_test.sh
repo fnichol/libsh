@@ -152,7 +152,7 @@ testPrintVersionNoGitRepo() {
 
   assertStdoutEquals "cool 1.2.3"
   assertStderrNull
-  cd - || return 1
+  cd - >/dev/null || return 1
   rm -rf "$dir"
 }
 
