@@ -13,6 +13,19 @@
 # terms.
 #
 
+if [ -n "${KSH_VERSION:-}" ]; then
+  # Evil, nasty, wicked hack to ignore calls to `local <var>`, on the strict
+  # assumption that no initialization will take place, i.e. `local
+  # <var>=<value>`. If this assumption holds, this implementation fakes a
+  # `local` keyword for ksh. The `eval` is used as some versions of dash will
+  # error with "Syntax error: Bad function name" whether or not it's in a
+  # conditional (likely in the parser/ast phase) (src:
+  # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=619786). Also, `shfmt`
+  # does *not* like a function called `local` so...another dodge here. TBD on
+  # this one, folks...
+  eval "local() { return 0; }"
+fi
+
 # Tracks a file for later cleanup in a trap handler.
 #
 # This function can be called immediately after a temp file is created, before
@@ -41,7 +54,8 @@
 # # do work on file, etc.
 # ```
 cleanup_file() {
-  local file="$1"
+  local _file
+  _file="$1"
 
   # If a tempfile hasn't been setup yet, create it
   if [ -z "${__CLEANUP_FILES__:-}" ]; then
@@ -53,7 +67,8 @@ cleanup_file() {
     fi
   fi
 
-  echo "$file" >>"$__CLEANUP_FILES__"
+  echo "$_file" >>"$__CLEANUP_FILES__"
+  unset _file
 }
 
 # Prints an error message to standard error and returns a non-zero exit code.
@@ -75,17 +90,19 @@ cleanup_file() {
 # die "No program to download tarball"
 # ```
 die() {
-  local msg="$1"
+  local _msg
+  _msg="$1"
 
   case "${TERM:-}" in
     *term | xterm-* | rxvt | screen | screen-*)
-      printf -- "\n\033[1;31;40mxxx \033[1;37;40m%s\033[0m\n\n" "$msg" >&2
+      printf -- "\n\033[1;31;40mxxx \033[1;37;40m%s\033[0m\n\n" "$_msg" >&2
       ;;
     *)
-      printf -- "\nxxx %s\n\n" "$msg" >&2
+      printf -- "\nxxx %s\n\n" "$_msg" >&2
       ;;
   esac
 
+  unset _msg
   return 1
 }
 
@@ -108,16 +125,19 @@ die() {
 # info "Downloading tarball"
 # ```
 info() {
-  local msg="$1"
+  local _msg
+  _msg="$1"
 
   case "${TERM:-}" in
     *term | xterm-* | rxvt | screen | screen-*)
-      printf -- "\033[1;36;40m  - \033[1;37;40m%s\033[0m\n" "$msg"
+      printf -- "\033[1;36;40m  - \033[1;37;40m%s\033[0m\n" "$_msg"
       ;;
     *)
-      printf -- "  - %s\n" "$msg"
+      printf -- "  - %s\n" "$_msg"
       ;;
   esac
+
+  unset _msg
 }
 
 # Creates a temporary file and prints the name to standard output.
@@ -170,11 +190,15 @@ mktemp_file() {
 # fi
 # ```
 need_cmd() {
-  local cmd="$1"
+  local _cmd
+  _cmd="$1"
 
-  if ! command -v "$cmd" >/dev/null 2>&1; then
-    die "Required command '$cmd' not found on PATH"
+  if ! command -v "$_cmd" >/dev/null 2>&1; then
+    die "Required command '$_cmd' not found on PATH"
+    return 1
   fi
+
+  unset _cmd
 }
 
 # Prints program version information to standard out.
@@ -235,44 +259,51 @@ need_cmd() {
 # print_version "my-program" "1.2.3" ""
 # ```
 print_version() {
-  local program="$1"
+  local _program _version _verbose
+  _program="$1"
   shift
-  local version="$1"
+  _version="$1"
   shift
-  local verbose=""
+  _verbose=""
   if [ -n "${1:-}" ]; then
-    verbose="$1"
+    _verbose="$1"
   fi
 
   if need_cmd git 2>/dev/null \
     && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    local date sha
-    date="$(git show -s --format=%ad --date=short)"
-    sha="$(git show -s --format=%h)"
+    local _date _sha
+    _date="$(git show -s --format=%ad --date=short)"
+    _sha="$(git show -s --format=%h)"
     if ! git diff-index --quiet HEAD --; then
-      sha="${sha}-dirty"
+      _sha="${_sha}-dirty"
     fi
 
-    echo "$program $version ($sha $date)"
+    echo "$_program $_version ($_sha $_date)"
 
-    if [ -n "$verbose" ]; then
-      local long_sha
-      long_sha="$(git show -s --format=%H)"
-      case "$sha" in
-        *-dirty) long_sha="${long_sha}-dirty" ;;
+    if [ -n "$_verbose" ]; then
+      local _long_sha
+      _long_sha="$(git show -s --format=%H)"
+      case "$_sha" in
+        *-dirty) _long_sha="${_long_sha}-dirty" ;;
       esac
 
-      echo "release: $version"
-      echo "commit-hash: $long_sha"
-      echo "commit-date: $date"
-    fi
-  else
-    echo "$program $version"
+      echo "release: $_version"
+      echo "commit-hash: $_long_sha"
+      echo "commit-date: $_date"
 
-    if [ -n "$verbose" ]; then
-      echo "release: $version"
+      unset _long_sha
+    fi
+
+    unset _date _sha
+  else
+    echo "$_program $_version"
+
+    if [ -n "$_verbose" ]; then
+      echo "release: $_version"
     fi
   fi
+
+  unset _program _version _verbose
 }
 
 # Prints a section-delimiting header to standard out.
@@ -294,16 +325,19 @@ print_version() {
 # section "Building project"
 # ```
 section() {
-  local msg="$1"
+  local _msg
+  _msg="$1"
 
   case "${TERM:-}" in
     *term | xterm-* | rxvt | screen | screen-*)
-      printf -- "\033[1;36;40m--- \033[1;37;40m%s\033[0m\n" "$msg"
+      printf -- "\033[1;36;40m--- \033[1;37;40m%s\033[0m\n" "$_msg"
       ;;
     *)
-      printf -- "--- %s\n" "$msg"
+      printf -- "--- %s\n" "$_msg"
       ;;
   esac
+
+  unset _msg
 }
 
 # Removes any tracked files registered via [`cleanup_file`].

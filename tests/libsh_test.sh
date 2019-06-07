@@ -26,6 +26,8 @@ testCleanupFile() {
 
   assertStdoutNull
   assertStderrNull
+
+  unset file
 }
 
 testCleanupFileNoVar() {
@@ -40,6 +42,8 @@ testCleanupFileNoVar() {
 
   assertStdoutNull
   assertStderrNull
+
+  unset file
 }
 
 testDieStripAnsi() {
@@ -154,6 +158,8 @@ testPrintVersionNoGitRepo() {
   assertStderrNull
   cd - >/dev/null || return 1
   rm -rf "$dir"
+
+  unset dir
 }
 
 testPrintVersionDirty() {
@@ -254,6 +260,8 @@ testTrapCleanupFiles() {
 
   assertStdoutNull
   assertStderrNull
+
+  unset alpha bravo charlie
 }
 
 testTrapCleanupNoVar() {
