@@ -14,9 +14,9 @@
 #
 # libsh.sh
 # --------
-# version: 0.0.0
-# source: https://github.com/fnichol/libsh/tree/0.0.0
-# archive: https://github.com/fnichol/libsh/archive/0.0.0.tar.gz
+# version: 0.1.0
+# source: https://github.com/fnichol/libsh/tree/0.1.0
+# archive: https://github.com/fnichol/libsh/archive/0.1.0.tar.gz
 #
 
 if [ -n "${KSH_VERSION:-}" ]; then
