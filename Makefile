@@ -5,7 +5,12 @@ SH_SOURCES := $(shell find . -type f -name '*.sh' -not -path './tmp/*')
 SH_TESTS := $(shell find tests -type f -name '*_test.sh')
 BASH_TESTS := $(shell find tests -type f -name '*_test.bash')
 CHECK_TOOLS = shellcheck shfmt
-TEST_TOOLS = curl tar
+
+ifeq ($(shell uname -s),FreeBSD)
+TEST_TOOLS = curl git gsed tar
+else
+TEST_TOOLS = curl git tar
+endif
 
 prepush: check test ## Runs all checks/test required before pushing
 	@echo "--- $@"

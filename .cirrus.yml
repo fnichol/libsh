@@ -4,28 +4,77 @@ check_task:
   check_script: make check
 
 task:
-  env:
-    matrix:
-      - SHELL_BIN: apple-bash-23
-      - SHELL_BIN: apple-bash-44
-      - SHELL_BIN: apple-bash-76
-      - SHELL_BIN: apple-bash-94
-      - SHELL_BIN: apple-bash-106.220
-      - SHELL_BIN: bash-2
-      - SHELL_BIN: bash-3
-      - SHELL_BIN: bash-3.00
-      - SHELL_BIN: bash-4
-      - SHELL_BIN: bash-5
-      - SHELL_BIN: busybox-1.23.2-ash
-      - SHELL_BIN: busybox-1.30.1-ash
-      - SHELL_BIN: dash-0
-      - SHELL_BIN: dash-0.5.10.2
-      - SHELL_BIN: ksh93-2008-07-25
-      - SHELL_BIN: ksh93-2012-08-01
-      # - SHELL_BIN: zsh-3
-      # - SHELL_BIN: zsh-4
-      - SHELL_BIN: zsh-5
-  name: test_$SHELL_BIN
-  container:
-    dockerfile: .ci/Dockerfile.ci
-  test_script: make test
+  matrix:
+    - env:
+        matrix:
+          - SHELL_BIN: apple-bash-23
+          - SHELL_BIN: apple-bash-44
+          - SHELL_BIN: apple-bash-76
+          - SHELL_BIN: apple-bash-94
+          - SHELL_BIN: apple-bash-106.220
+          - SHELL_BIN: bash-2
+          - SHELL_BIN: bash-3
+          - SHELL_BIN: bash-3.00
+          - SHELL_BIN: bash-4
+          - SHELL_BIN: bash-5
+          - SHELL_BIN: busybox-1.23.2-ash
+          - SHELL_BIN: busybox-1.30.1-ash
+          - SHELL_BIN: dash-0
+          - SHELL_BIN: dash-0.5.10.2
+          - SHELL_BIN: ksh93-2008-07-25
+          - SHELL_BIN: ksh93-2012-08-01
+          # - SHELL_BIN: zsh-3
+          # - SHELL_BIN: zsh-4
+          - SHELL_BIN: zsh-5
+      name: test_linux_$SHELL_BIN
+      container:
+        dockerfile: .ci/Dockerfile.ci
+      test_script: make test
+    - env:
+        matrix:
+          - SHELL_BIN: bash-3
+          - SHELL_BIN: bash-5
+            PKG: bash
+          - SHELL_BIN: dash
+            PKG: dash
+          - SHELL_BIN: sh
+          - SHELL_BIN: ksh
+          - SHELL_BIN: zsh
+      name: test_macos_$SHELL_BIN
+      osx_instance:
+        image: mojave-base
+      setup_script: |
+        if [ -n "${PKG:-}" ]; then brew install "$PKG"; fi
+        if [ "$SHELL_BIN" = "bash-3" ]; then
+          ln -snvf /bin/bash /usr/local/bin/bash-3
+        fi
+        if [ "$SHELL_BIN" = "bash-5" ]; then
+          ln -snvf /usr/local/bin/bash /usr/local/bin/bash-5
+        fi
+      test_script: make test
+    - env:
+        matrix:
+          - SHELL_BIN: bash
+            PKG: shells/bash
+          - SHELL_BIN: dash
+            PKG: shells/dash
+          # - SHELL_BIN: jsh
+          #   PKG: shells/heirloom-sh
+          - SHELL_BIN: ksh
+            PKG: shells/pdksh
+          - SHELL_BIN: ksh93
+            PKG: shells/ksh93
+          # - SHELL_BIN: mksh
+          #   PKG: shells/mksh
+          - SHELL_BIN: oksh
+            PKG: shells/oksh
+          - SHELL_BIN: sh
+          - SHELL_BIN: zsh
+            PKG: shells/zsh
+      name: test_freebsd_$SHELL_BIN
+      freebsd_instance:
+        image: freebsd-11-2-release-amd64
+      setup_script: |
+        pkg install --yes devel/git devel/gmake textproc/gsed
+        if [ -n "${PKG:-}" ]; then pkg install --yes "$PKG"; fi
+      test_script: gmake test
