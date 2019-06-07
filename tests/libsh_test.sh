@@ -289,4 +289,6 @@ createGitRepo() {
   long_sha="$(git show -s --format=%H)"
 }
 
+shell_compat "$0"
+
 . "$shunit2"
