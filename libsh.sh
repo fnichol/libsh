@@ -12,6 +12,12 @@
 # file may not be copied, modified, or distributed except according to those
 # terms.
 #
+# libsh.sh
+# --------
+# version: 0.0.0
+# source: https://github.com/fnichol/libsh/tree/0.0.0
+# archive: https://github.com/fnichol/libsh/archive/0.0.0.tar.gz
+#
 
 if [ -n "${KSH_VERSION:-}" ]; then
   # Evil, nasty, wicked hack to ignore calls to `local <var>`, on the strict

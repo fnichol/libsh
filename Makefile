@@ -57,6 +57,34 @@ testtools: ## Checks that required test tools are found on PATH
 		$(error "Required tool '$(tool)' not found on PATH")))
 .PHONY: testtools
 
+bump-version: ## Set a new version for the project. Set VERSION=x.y.z
+	@echo "--- $@"
+	@if [ -z "$(strip $(VERSION))" ]; then \
+		echo "xxx usage: make bump-version VERSION=1.2.3" >&2; \
+		echo "xxx Missing required value: VERSION" >&2; \
+		exit 1; \
+	fi
+	@echo "  - Updating: [README.md, libsh.sh]"
+	current="$$(cat VERSION.txt | sed 's,\.,\\.,g')" \
+		&& sed -i.bak "s,$${current},$(VERSION),g" README.md libsh.sh \
+		&& rm -f README.md.bak libsh.sh.bak
+	@echo "  - Setting version to '$(VERSION)' in VERSION.txt"
+	echo "$(VERSION)" > VERSION.txt
+	@echo "  - Preparing release commit"
+	git add README.md VERSION.txt libsh.sh
+	git commit --signoff --message "[release] Update version to $(VERSION)"
+	@echo
+	@echo "To complete the release for $(VERSION), run: \`make tag\`"
+.PHONY: bump-version
+
+tag: ## Create a new release Git tag
+	@echo "--- $@"
+	version=$$(cat VERSION.txt) \
+		&& git tag --annotate "$$version" --message "Release: $$version" \
+		&& echo "Release tag '$$version' created." \
+		&& echo "To push: \`git push origin $$version\`"
+.PHONY: tag
+
 clean: ## Cleans up project
 	rm -rf tmp
 .PHONY: clean
