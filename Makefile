@@ -80,10 +80,11 @@ bump-version: ## Set a new version for the project. Set VERSION=x.y.z
 
 tag: ## Create a new release Git tag
 	@echo "--- $@"
-	version=$$(cat VERSION.txt) \
-		&& git tag --annotate "$$version" --message "Release: $$version" \
-		&& echo "Release tag '$$version' created." \
-		&& echo "To push: \`git push origin $$version\`"
+	@version="$$(cat VERSION.txt)" && tag="v$$version" \
+		&& git tag --annotate "$$tag" \
+			--message "Release version $$version" \
+		&& echo "Release tag '$$tag' created." \
+		&& echo "To push: \`git push origin $$tag\`"
 .PHONY: tag
 
 clean: ## Cleans up project

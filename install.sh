@@ -43,8 +43,8 @@ print_usage() {
         # \`# INSERT: libsh.sh\`
         $program --mode=insert --target=myprog.sh
 
-        # Update the inserted version with the master branch version in cli.sh:
-        $program --mode=insert --release=master --target=cli.sh
+        # Update the inserted version with a specific release in cli.sh:
+        $program --mode=insert --release=0.0.1 --target=cli.sh
 
     AUTHOR:
         $author
@@ -199,7 +199,7 @@ download_and_extract() {
   cleanup_file "$archive"
 
   download \
-    "https://github.com/fnichol/libsh/archive/${release}.tar.gz" \
+    "https://github.com/fnichol/libsh/archive/v${release}.tar.gz" \
     "$archive"
 
   tar xOf "$archive" --strip-components 1 "libsh-$release/libsh.sh" >"$target"
@@ -348,8 +348,16 @@ latest_release() {
       git ls-remote --tags https://github.com/fnichol/libsh.git \
         | sort --field-separator='/' --key=3 --version-sort
     fi
-  } | awk -F/ '($NF ~ /^[0-9]+\./ && $NF !~ /\^\{\}$/) { last = $NF }
-      END { print last }'
+  } | awk -F/ '
+        ($NF ~ /^v[0-9]+\./ && $NF !~ /\^\{\}$/) {
+          last = $NF
+        }
+
+        END {
+          sub(/^v/, "", last)
+          print last
+        }
+      '
 }
 
 # TODO: add to libsh.sh
