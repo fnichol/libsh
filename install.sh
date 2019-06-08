@@ -29,11 +29,11 @@ print_usage() {
                                 [examples: latest, 1.2.3, master]
                                 [default: latest]
         -t, --target=<TARGET>   Target directory or file for installation
-                                [examples: ./vendor/libsh.sh, file.txt]
-                                [default: ./vendor/libsh.sh]
+                                [examples: /tmp/libsh.sh, file.txt]
+                                [default: ./vendor/lib/libsh.sh]
 
     EXAMPLES:
-        # Vendor the latest release into ./vendor/libsh.sh
+        # Vendor the latest release into ./vendor/lib/libsh.sh
         $program
 
         # Vendor a specific release into /tmp/libsh-0.0.1.sh
@@ -76,7 +76,7 @@ invoke_cli() {
   VERBOSE=""
   mode="vendor"
   release="latest"
-  target="./vendor/libsh.sh"
+  target="./vendor/lib/libsh.sh"
 
   OPTIND=1
   while getopts "hm:r:t:vV-:" arg; do
