@@ -377,7 +377,8 @@ setup_traps() {
 }
 
 vendor_libsh() {
-  need_cmd cp
+  need_cmd cat
+  need_cmd touch
   need_cmd dirname
   need_cmd mkdir
 
@@ -394,7 +395,8 @@ vendor_libsh() {
 
   info "Copying libsh to $target"
   mkdir -p "$(dirname "$target")"
-  cp "$tmpfile" "$target"
+  touch "$target"
+  cat "$tmpfile" >"$target"
 }
 
 version_ge() {
