@@ -17,6 +17,7 @@
 # version: 0.1.0
 # source: https://github.com/fnichol/libsh/tree/0.1.0
 # archive: https://github.com/fnichol/libsh/archive/0.1.0.tar.gz
+# author: Fletcher Nichol <fnichol@nichol.ca>
 #
 
 if [ -n "${KSH_VERSION:-}" ]; then
