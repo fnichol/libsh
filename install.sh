@@ -177,7 +177,7 @@ invoke_cli() {
 
   case "$mode" in
     insert)
-      insertlibsh "$release" "$target"
+      insert_libsh "$release" "$target"
       ;;
     vendor)
       vendor_libsh "$release" "$target"
