@@ -149,10 +149,12 @@ info() {
 
 # Creates a temporary file and prints the name to standard output.
 #
-# It looks like the maximally portable way of calling `mktemp` to create a file
-# is to provide no arguments (therefore having no control over the naming). All
-# tested invocations will create a file in each platform's suitable temporary
-# directory.
+# Most systems use the first no-argument version, however Mac OS X 10.10
+# (Yosemite) and older don't allow the no-argument version, hence the second
+# fallback version.
+
+# All tested invocations will create a file in each platform's suitable
+# temporary directory.
 #
 # * `@stdout` path to temporary file
 # * `@return 0` if successful
@@ -166,7 +168,7 @@ info() {
 # # use file
 # ```
 mktemp_file() {
-  mktemp
+  mktemp 2>/dev/null || mktemp -t tmp
 }
 
 # Determines whether or not a program is available on the system PATH.
