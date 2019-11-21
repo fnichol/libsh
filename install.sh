@@ -211,6 +211,8 @@ download() {
   _url="$1"
   _dst="$2"
 
+  need_cmd sed
+
   # Attempt to download with wget, if found. If successful, quick return
   if command -v wget >/dev/null; then
     info "Downloading $_url to $_dst (wget)"
@@ -218,7 +220,7 @@ download() {
     set +e
     wget -q -O "$_dst" "$_url"
     _code="$?"
-    set "-$_orig_flags"
+    set "-$(echo "$_orig_flags" | sed s/s//g)"
     if [ $_code -eq 0 ]; then
       unset _url _dst _code _orig_flags
       return 0
@@ -238,7 +240,7 @@ download() {
     set +e
     curl -sSfL "$_url" -o "$_dst"
     code="$?"
-    set "-$_orig_flags"
+    set "-$(echo "$_orig_flags" | sed s/s//g)"
     if [ $code -eq 0 ]; then
       unset _url _dst _code _orig_flags
       return 0
