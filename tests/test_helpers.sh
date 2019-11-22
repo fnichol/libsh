@@ -137,7 +137,7 @@ run() {
 }
 
 run_in_sh_script() {
-  cat "${0%/*}/../libsh.sh" >"$tmppath/sh_script.sh"
+  cat "$libsh_src" >"$tmppath/sh_script.sh"
   echo >>"$tmppath/sh_script.sh"
   echo '"$@"' >>"$tmppath/sh_script.sh"
 
@@ -166,6 +166,8 @@ shell_compat() {
     SHUNIT_PARENT="$1"
   fi
 }
+
+libsh_src="${0%/*}/../libsh.sh"
 
 # shellcheck disable=SC2034
 shunit2="${0%/*}/../tmp/shunit2/shunit2"

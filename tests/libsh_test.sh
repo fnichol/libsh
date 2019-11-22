@@ -14,6 +14,23 @@ setUp() {
   commonSetUp
 }
 
+testCheckCmdPresent() {
+  # The `ls` command should almost always be in `$PATH` as a program
+  run check_cmd ls
+
+  assertTrue 'check_cmd failed' "$return_status"
+  assertStdoutNull
+  assertStderrNull
+}
+
+testCheckCmdMissing() {
+  run check_cmd __not_a_great_chance_this_will_exist__
+
+  assertFalse 'check_cmd succeeded' "$return_status"
+  assertStdoutNull
+  assertStderrNull
+}
+
 testCleanupFile() {
   local file
   __CLEANUP_FILES__="$(mktemp_file)"
@@ -48,7 +65,7 @@ testCleanupFileNoVar() {
 
 testDieStripAnsi() {
   printf -- '\nxxx I give up\n\n' >"$expected"
-  run die 'I give up'
+  run_in_sh_script die 'I give up'
 
   stripAnsi <"$stderr" >"$actual"
 
@@ -62,7 +79,7 @@ testDieStripAnsi() {
 testDieAnsi() {
   printf -- '\n\033[1;31;40mxxx \033[1;37;40mI give up\033[0m\n\n' >"$expected"
   export TERM=xterm
-  run die 'I give up'
+  run_in_sh_script die 'I give up'
 
   assertFalse 'fail did not fail' "$return_status"
   # Shell string equals has issues with ANSI escapes, so let's use `cmp` to
@@ -111,7 +128,7 @@ testNeedCmdPresent() {
 }
 
 testNeedCmdMissing() {
-  run need_cmd __not_a_great_chance_this_will_exist__
+  run_in_sh_script need_cmd __not_a_great_chance_this_will_exist__
 
   assertFalse 'need_cmd succeeded' "$return_status"
   assertStderrStripAnsiContains 'xxx Required command'
