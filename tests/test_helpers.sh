@@ -16,6 +16,7 @@ commonOneTimeSetUp() {
   expected="$tmppath/expected"
   actual="$tmppath/actual"
   template="$tmppath/template"
+  sh_script="$tmppath/sh_script.sh"
 
   fakebinpath="$SHUNIT_TMPDIR/fakebin"
 }
@@ -136,12 +137,50 @@ run() {
   return "$return_status"
 }
 
-run_in_sh_script() {
-  cat "$libsh_src" >"$tmppath/sh_script.sh"
-  echo >>"$tmppath/sh_script.sh"
-  echo '"$@"' >>"$tmppath/sh_script.sh"
+__setup_sh_script() {
+  cat "$libsh_src" >"$sh_script"
+  echo >>"$sh_script"
+}
 
-  run sh "$tmppath/sh_script.sh" "$@"
+run_in_sh_script() {
+  __setup_sh_script
+  while read -r line; do
+    echo "$line" >>"$sh_script"
+  done
+
+  run "${SHELL_BIN:-sh}" "$sh_script"
+}
+
+run_in_sh_script_and_signal() {
+  __setup_sh_script
+  while read -r line; do
+    echo "$line" >>"$sh_script"
+  done
+
+  echo "
+    # Run the script with the shell interpreter in the background
+    ${SHELL_BIN:-sh} $sh_script &
+    # Capture the pid of the script
+    bgps=\$!
+    # Sleep to wait for script to start running and to start writing to output
+    # streams
+    sleep 0.05
+    # Send the given signal to the script process
+    kill -s '$1' \$bgps
+    # Wait for the script process to terminate
+    wait \$bgps
+    # Return the exit code from the script process
+    exit $?
+  " >"$tmppath/run_in_bg.sh"
+
+  run "${SHELL_BIN:-sh}" "$tmppath/run_in_bg.sh"
+}
+
+run_with_sh_script() {
+  __setup_sh_script
+  echo '"$@"' >>"$sh_script"
+
+  run "${SHELL_BIN:-sh}" "$sh_script" "$@"
 }
 
 debugLastRun() {

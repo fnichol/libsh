@@ -6,6 +6,7 @@ CHECK_TOOLS += shellcheck shfmt
 test-shell: testtools dl-shunit2 ## Runs all shell code tests
 	@echo "--- $@"
 	for test in $(SH_TESTS); do \
+		export SHELL_BIN=$(SHELL_BIN); \
 		echo; echo "Running: $$test"; $(SHELL_BIN) $$test; done
 .PHONY: test-shell
 
