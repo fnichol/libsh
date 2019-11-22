@@ -33,6 +33,35 @@ if [ -n "${KSH_VERSION:-}" ]; then
   eval "local() { return 0; }"
 fi
 
+# Determines whether or not a program is available on the system PATH.
+#
+# * `@param [String] program name
+# * `@return 0` if program is found on system PATH
+# * `@return 1` if program is not found
+#
+# # Environment Variables
+#
+# * `PATH` indirectly used to search for the program
+#
+# # Examples
+#
+# Basic usage, when used as a conditional check:
+#
+# ```sh
+# if check_cmd git; then
+#   echo "Found Git"
+# fi
+check_cmd() {
+  local _cmd
+  _cmd="$1"
+
+  if ! command -v "$_cmd" >/dev/null 2>&1; then
+    return 1
+  fi
+
+  unset _cmd
+}
+
 # Tracks a file for later cleanup in a trap handler.
 #
 # This function can be called immediately after a temp file is created, before
@@ -78,16 +107,20 @@ cleanup_file() {
   unset _file
 }
 
-# Prints an error message to standard error and returns a non-zero exit code.
+# Prints an error message to standard error and exits with a non-zero exit
+# code.
 #
 # * `@param [String]` warning text
 # * `@stderr` warning text message
-# * `@return 1` to signal user intended a failure
 #
 # # Environment Variables
 #
 # * `TERM` used to determine whether or not the terminal is capable of printing
 #   colored output.
+#
+# # Notes
+#
+# This function calls `exit` and will **not** return.
 #
 # # Examples
 #
@@ -110,7 +143,7 @@ die() {
   esac
 
   unset _msg
-  return 1
+  exit 1
 }
 
 # Prints an information, detailed step to standard out.
@@ -171,16 +204,20 @@ mktemp_file() {
   mktemp 2>/dev/null || mktemp -t tmp
 }
 
-# Determines whether or not a program is available on the system PATH.
+# Prints an error message and exits with a non-zero code if the program is not
+# available on the system PATH.
 #
 # * `@param [String] program name
 # * `@stderr` a warning message is printed if program cannot be found
-# * `@return 0` if program is found on system PATH
-# * `@return 1` if program is not found
 #
 # # Environment Variables
 #
 # * `PATH` indirectly used to search for the program
+#
+# # Notes
+#
+# If the program is not found, this function calls `exit` and will **not**
+# return.
 #
 # # Examples
 #
@@ -189,25 +226,16 @@ mktemp_file() {
 # ```sh
 # need_cmd git
 # ```
-#
-# This function can also be used as a conditional check, however the standard
-# error may have to be redirected:
-#
-# ```sh
-# if need_cmd git 2>/dev/null; then
-#   echo "Found Git"
-# fi
-# ```
 need_cmd() {
   local _cmd
   _cmd="$1"
 
-  if ! command -v "$_cmd" >/dev/null 2>&1; then
+  if ! check_cmd "$_cmd"; then
     die "Required command '$_cmd' not found on PATH"
-    return 1
   fi
 
   unset _cmd
+  return 0
 }
 
 # Prints program version information to standard out.
@@ -278,7 +306,7 @@ print_version() {
     _verbose="$1"
   fi
 
-  if need_cmd git 2>/dev/null \
+  if check_cmd git \
     && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     local _date _sha
     _date="$(git show -s --format=%ad --date=short)"
