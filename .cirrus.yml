@@ -22,6 +22,7 @@ task:
           - SHELL_BIN: dash-0
           - SHELL_BIN: dash-0.5.10.2
           - SHELL_BIN: ksh93-2008-07-25
+            LANG: C
           - SHELL_BIN: ksh93-2012-08-01
           # - SHELL_BIN: zsh-3
           # - SHELL_BIN: zsh-4
