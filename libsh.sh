@@ -56,10 +56,12 @@ check_cmd() {
   _cmd="$1"
 
   if ! command -v "$_cmd" >/dev/null 2>&1; then
+    unset _cmd
     return 1
+  else
+    unset _cmd
+    return 0
   fi
-
-  unset _cmd
 }
 
 # Tracks a file for later cleanup in a trap handler.
