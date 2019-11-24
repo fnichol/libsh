@@ -371,6 +371,27 @@ testTrapCleanupNoFile() {
   assertStderrNull
 }
 
+testWarnStripAnsi() {
+  run warn 'something is questionable'
+
+  assertTrue 'warn failed' "$return_status"
+  assertStdoutStripAnsiEquals '!!! something is questionable'
+  assertStderrNull
+}
+
+testWarnAnsi() {
+  printf -- '\033[1;31;40m!!! \033[1;37;40msomething is questionable\033[0m\n' \
+    >"$expected"
+  export TERM=xterm
+  run warn 'something is questionable'
+
+  assertTrue 'warn failed' "$return_status"
+  # Shell string equals has issues with ANSI escapes, so let's use $(cmp) to
+  # compare byte by byte
+  assertTrue 'ANSI stdout not equal' "cmp '$expected' '$stdout'"
+  assertStderrNull
+}
+
 createGitRepo() {
   rm -rf "tmppath/$1"
   git init --quiet "$tmppath/$1"
