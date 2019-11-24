@@ -17,6 +17,7 @@ commonOneTimeSetUp() {
   actual="$tmppath/actual"
   template="$tmppath/template"
   sh_script="$tmppath/sh_script.sh"
+  isolated_path="$tmppath/isolated_path"
 
   fakebinpath="$SHUNIT_TMPDIR/fakebin"
 }
@@ -216,6 +217,16 @@ stripAnsi() {
       sed 's,'"$(printf "\033")"'\[[0-9;]*[a-zA-Z],,g'
       ;;
   esac
+}
+
+isolatedPathFor() {
+  mkdir -p "$isolated_path"
+
+  for _bin in "$@"; do
+    if command -v "$_bin"; then
+      ln -snf "$(command -v "$_bin")" "$isolated_path/$_bin"
+    fi
+  done
 }
 
 shell_compat() {

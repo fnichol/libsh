@@ -148,6 +148,82 @@ die() {
   exit 1
 }
 
+# Downloads the contents at the given URL to the given local file.
+#
+# This implementation attempts to use the `curl` program with a fallback to the
+# `wget` program. The first download program to succeed is used and if all
+# fail, this function returns a non-zero code.
+#
+# * `@param [String]` download URL
+# * `@param [String]` destination file
+# * `@return 0` if a download was successful
+# * `@return 1` if a download was not successful
+#
+# # Notes
+#
+# At least one of `curl` or `wget` must be compiled with SSL/TLS support to be
+# able to download from `https` sources.
+#
+# # Examples
+#
+# Basic usage:
+#
+# ```sh
+# download http://example.com/file.txt /tmp/file.txt
+# ```
+download() {
+  local _url _dst _code _orig_flags
+  _url="$1"
+  _dst="$2"
+
+  need_cmd sed
+
+  # Attempt to download with curl, if found. If successful, quick return
+  if check_cmd curl; then
+    info "Downloading $_url to $_dst (curl)"
+    _orig_flags="$-"
+    set +e
+    curl -sSfL "$_url" -o "$_dst"
+    code="$?"
+    set "-$(echo "$_orig_flags" | sed s/s//g)"
+    if [ $code -eq 0 ]; then
+      unset _url _dst _code _orig_flags
+      return 0
+    else
+      local _e
+      _e="curl failed to download file, perhaps curl doesn't have"
+      _e="$_e SSL support and/or no CA certificates are present?"
+      warn "$_e"
+      unset _e
+    fi
+  fi
+
+  # Attempt to download with wget, if found. If successful, quick return
+  if check_cmd wget; then
+    info "Downloading $_url to $_dst (wget)"
+    _orig_flags="$-"
+    set +e
+    wget -q -O "$_dst" "$_url"
+    _code="$?"
+    set "-$(echo "$_orig_flags" | sed s/s//g)"
+    if [ $_code -eq 0 ]; then
+      unset _url _dst _code _orig_flags
+      return 0
+    else
+      local _e
+      _e="wget failed to download file, perhaps wget doesn't have"
+      _e="$_e SSL support and/or no CA certificates are present?"
+      warn "$_e"
+      unset _e
+    fi
+  fi
+
+  unset _url _dst _code _orig_flags
+  # If we reach this point, wget and curl have failed and we're out of options
+  warn "Downloading requires SSL-enabled 'curl' or 'wget' on PATH"
+  return 1
+}
+
 # Prints an informational, detailed step to standard out.
 #
 # * `@param [String]` informational text
