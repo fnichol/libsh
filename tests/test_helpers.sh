@@ -223,7 +223,7 @@ isolatedPathFor() {
   mkdir -p "$isolated_path"
 
   for _bin in "$@"; do
-    if command -v "$_bin"; then
+    if command -v "$_bin" >/dev/null; then
       ln -snf "$(command -v "$_bin")" "$isolated_path/$_bin"
     fi
   done
