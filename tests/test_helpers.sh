@@ -144,6 +144,25 @@ run_in_sh_script() {
   run sh "$tmppath/sh_script.sh" "$@"
 }
 
+debugLastRun() {
+  echo "======================"
+  echo "Last 'run' invocation:"
+  echo "----------------------"
+  echo
+  echo "return_status=$return_status"
+  echo
+  echo "stdout:"
+  echo "---"
+  cat "$stdout"
+  echo "---"
+  echo
+  echo "stderr:"
+  echo "---"
+  cat "$stderr"
+  echo "---"
+  echo "======================"
+}
+
 stripAnsi() {
   case "$(uname -s)" in
     FreeBSD)
