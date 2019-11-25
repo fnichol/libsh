@@ -67,9 +67,9 @@ assertStdoutStripAnsiContains() {
   stripAnsi <"$stdout" >"$tmppath/stdout_no_ansi"
 
   if [ "$#" -eq 2 ]; then
-    assertTrue "$1" "grep -E '$2' <'$tmppath/stderr_no_ansi'"
+    assertTrue "$1" "grep -E '$2' <'$tmppath/stdout_no_ansi'"
   else
-    assertTrue 'stdout does not contain' "grep -E '$1' <'$tmppath/stderr_no_ansi'"
+    assertTrue 'stdout does not contain' "grep -E '$1' <'$tmppath/stdout_no_ansi'"
   fi
 }
 
