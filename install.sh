@@ -188,21 +188,13 @@ invoke_cli() {
   esac
 }
 
-download_and_extract() {
-  need_cmd tar
-
+download_libsh() {
   local release="$1"
   local target="$2"
 
-  local archive
-  archive="$(mktemp_file)"
-  cleanup_file "$archive"
-
   download \
-    "https://github.com/fnichol/libsh/archive/v${release}.tar.gz" \
-    "$archive"
-
-  tar xOf "$archive" --strip-components 1 "libsh-$release/libsh.sh" >"$target"
+    "https://github.com/fnichol/libsh/releases/download/v${release}/libsh.sh" \
+    "$target"
 }
 
 # TODO: add to libsh.sh
@@ -270,7 +262,7 @@ insert_libsh() {
 
   section "Inserting libsh.sh '$release' into $target"
 
-  download_and_extract "$release" "$libsh"
+  download_libsh "$release" "$libsh"
 
   info "Inlining libsh into $target"
   awk -v libsh="$libsh" '
@@ -393,7 +385,7 @@ vendor_libsh() {
 
   section "Vendoring libsh.sh '$release' to $target"
 
-  download_and_extract "$release" "$tmpfile"
+  download_libsh "$release" "$tmpfile"
 
   info "Copying libsh to $target"
   mkdir -p "$(dirname "$target")"
