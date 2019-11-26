@@ -14,10 +14,13 @@
 #
 # libsh.sh
 # --------
-# version: 0.1.0
-# source: https://github.com/fnichol/libsh/tree/0.1.0
-# archive: https://github.com/fnichol/libsh/archive/0.1.0.tar.gz
+# project: https://github.com/fnichol/libsh
 # author: Fletcher Nichol <fnichol@nichol.ca>
+# version: @@version@@
+# commit-hash: @@commit_hash@@
+# commit-date: @@commit_date@@
+# source: https://github.com/fnichol/libsh/tree/v@@version@@
+# archive: https://github.com/fnichol/libsh/archive/v@@version@@.tar.gz
 #
 
 if [ -n "${KSH_VERSION:-}" ]; then
