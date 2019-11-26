@@ -169,7 +169,7 @@ invoke_cli() {
   done
   shift "$((OPTIND - 1))"
 
-  setup_traps
+  setup_traps trap_cleanup_files
 
   if [ "$release" = "latest" ]; then
     release="$(latest_release)"
@@ -195,59 +195,6 @@ download_libsh() {
   download \
     "https://github.com/fnichol/libsh/releases/download/v${release}/libsh.sh" \
     "$target"
-}
-
-# TODO: add to libsh.sh
-download() {
-  local _url _dst _code _orig_flags
-  _url="$1"
-  _dst="$2"
-
-  need_cmd sed
-
-  # Attempt to download with wget, if found. If successful, quick return
-  if command -v wget >/dev/null; then
-    info "Downloading $_url to $_dst (wget)"
-    _orig_flags="$-"
-    set +e
-    wget -q -O "$_dst" "$_url"
-    _code="$?"
-    set "-$(echo "$_orig_flags" | sed s/s//g)"
-    if [ $_code -eq 0 ]; then
-      unset _url _dst _code _orig_flags
-      return 0
-    else
-      local _e
-      _e="wget failed to download file, perhaps wget doesn't have"
-      _e="$_e SSL support and/or no CA certificates are present?"
-      warn "$_e"
-      unset _e
-    fi
-  fi
-
-  # Attempt to download with curl, if found. If successful, quick return
-  if command -v curl >/dev/null; then
-    info "Downlading $_url to $_dst (curl)"
-    _orig_flags="$-"
-    set +e
-    curl -sSfL "$_url" -o "$_dst"
-    code="$?"
-    set "-$(echo "$_orig_flags" | sed s/s//g)"
-    if [ $code -eq 0 ]; then
-      unset _url _dst _code _orig_flags
-      return 0
-    else
-      local _e
-      _e="curl failed to download file, perhaps curl doesn't have"
-      _e="$_e SSL support and/or no CA certificates are present?"
-      warn "$_e"
-      unset _e
-    fi
-  fi
-
-  unset _url _dst _code _orig_flags
-  # If we reach this point, wget and curl have failed and we're out of options
-  die "Downloading requires SSL-enabled 'curl' or 'wget' on PATH"
 }
 
 insert_libsh() {
@@ -354,22 +301,6 @@ latest_release() {
       '
 }
 
-# TODO: add to libsh.sh
-setup_traps() {
-  local _sig
-  # Very nice, portable signal handling thanks to:
-  # https://unix.stackexchange.com/a/240736
-  for _sig in HUP INT QUIT ALRM TERM; do
-    trap "
-      trap_cleanup_files
-      trap - $_sig EXIT
-      kill -s $_sig "'"$$"' "$_sig"
-  done
-  trap trap_cleanup_files EXIT
-
-  unset _sig
-}
-
 vendor_libsh() {
   need_cmd cat
   need_cmd touch
@@ -404,23 +335,6 @@ version_ge() {
     && [ "$(echo "$version" | awk -F'.' '{ print $2 }')" -ge "$min" ]
 }
 
-# TODO: add to libsh.sh
-warn() {
-  local _msg
-  _msg="$1"
-
-  case "${TERM:-}" in
-    *term | xterm-* | rxvt | screen | screen-*)
-      printf -- "\033[1;31;40m!!! \033[1;37;40m%s\033[0m\n" "$_msg"
-      ;;
-    *)
-      printf -- "!!! %s\n" "$_msg"
-      ;;
-  esac
-
-  unset _msg
-}
-
 # BEGIN: libsh.sh
 
 #
@@ -434,9 +348,13 @@ warn() {
 #
 # libsh.sh
 # --------
-# version: 0.1.0
-# source: https://github.com/fnichol/libsh/tree/0.1.0
-# archive: https://github.com/fnichol/libsh/archive/0.1.0.tar.gz
+# project: https://github.com/fnichol/libsh
+# author: Fletcher Nichol <fnichol@nichol.ca>
+# version: 0.2.0
+# commit-hash: 862501231edae690f6a28ecee7252c452e1740c0
+# commit-date: 2019-11-25
+# source: https://github.com/fnichol/libsh/tree/v0.2.0
+# archive: https://github.com/fnichol/libsh/archive/v0.2.0.tar.gz
 #
 
 if [ -n "${KSH_VERSION:-}" ]; then
@@ -451,6 +369,37 @@ if [ -n "${KSH_VERSION:-}" ]; then
   # this one, folks...
   eval "local() { return 0; }"
 fi
+
+# Determines whether or not a program is available on the system PATH.
+#
+# * `@param [String] program name
+# * `@return 0` if program is found on system PATH
+# * `@return 1` if program is not found
+#
+# # Environment Variables
+#
+# * `PATH` indirectly used to search for the program
+#
+# # Examples
+#
+# Basic usage, when used as a conditional check:
+#
+# ```sh
+# if check_cmd git; then
+#   echo "Found Git"
+# fi
+check_cmd() {
+  local _cmd
+  _cmd="$1"
+
+  if ! command -v "$_cmd" >/dev/null 2>&1; then
+    unset _cmd
+    return 1
+  else
+    unset _cmd
+    return 0
+  fi
+}
 
 # Tracks a file for later cleanup in a trap handler.
 #
@@ -497,16 +446,20 @@ cleanup_file() {
   unset _file
 }
 
-# Prints an error message to standard error and returns a non-zero exit code.
+# Prints an error message to standard error and exits with a non-zero exit
+# code.
 #
 # * `@param [String]` warning text
 # * `@stderr` warning text message
-# * `@return 1` to signal user intended a failure
 #
 # # Environment Variables
 #
 # * `TERM` used to determine whether or not the terminal is capable of printing
 #   colored output.
+#
+# # Notes
+#
+# This function calls `exit` and will **not** return.
 #
 # # Examples
 #
@@ -529,10 +482,86 @@ die() {
   esac
 
   unset _msg
+  exit 1
+}
+
+# Downloads the contents at the given URL to the given local file.
+#
+# This implementation attempts to use the `curl` program with a fallback to the
+# `wget` program. The first download program to succeed is used and if all
+# fail, this function returns a non-zero code.
+#
+# * `@param [String]` download URL
+# * `@param [String]` destination file
+# * `@return 0` if a download was successful
+# * `@return 1` if a download was not successful
+#
+# # Notes
+#
+# At least one of `curl` or `wget` must be compiled with SSL/TLS support to be
+# able to download from `https` sources.
+#
+# # Examples
+#
+# Basic usage:
+#
+# ```sh
+# download http://example.com/file.txt /tmp/file.txt
+# ```
+download() {
+  local _url _dst _code _orig_flags
+  _url="$1"
+  _dst="$2"
+
+  need_cmd sed
+
+  # Attempt to download with curl, if found. If successful, quick return
+  if check_cmd curl; then
+    info "Downloading $_url to $_dst (curl)"
+    _orig_flags="$-"
+    set +e
+    curl -sSfL "$_url" -o "$_dst"
+    code="$?"
+    set "-$(echo "$_orig_flags" | sed s/s//g)"
+    if [ $code -eq 0 ]; then
+      unset _url _dst _code _orig_flags
+      return 0
+    else
+      local _e
+      _e="curl failed to download file, perhaps curl doesn't have"
+      _e="$_e SSL support and/or no CA certificates are present?"
+      warn "$_e"
+      unset _e
+    fi
+  fi
+
+  # Attempt to download with wget, if found. If successful, quick return
+  if check_cmd wget; then
+    info "Downloading $_url to $_dst (wget)"
+    _orig_flags="$-"
+    set +e
+    wget -q -O "$_dst" "$_url"
+    _code="$?"
+    set "-$(echo "$_orig_flags" | sed s/s//g)"
+    if [ $_code -eq 0 ]; then
+      unset _url _dst _code _orig_flags
+      return 0
+    else
+      local _e
+      _e="wget failed to download file, perhaps wget doesn't have"
+      _e="$_e SSL support and/or no CA certificates are present?"
+      warn "$_e"
+      unset _e
+    fi
+  fi
+
+  unset _url _dst _code _orig_flags
+  # If we reach this point, wget and curl have failed and we're out of options
+  warn "Downloading requires SSL-enabled 'curl' or 'wget' on PATH"
   return 1
 }
 
-# Prints an information, detailed step to standard out.
+# Prints an informational, detailed step to standard out.
 #
 # * `@param [String]` informational text
 # * `@stdout` informational heading text
@@ -568,10 +597,12 @@ info() {
 
 # Creates a temporary file and prints the name to standard output.
 #
-# It looks like the maximally portable way of calling `mktemp` to create a file
-# is to provide no arguments (therefore having no control over the naming). All
-# tested invocations will create a file in each platform's suitable temporary
-# directory.
+# Most systems use the first no-argument version, however Mac OS X 10.10
+# (Yosemite) and older don't allow the no-argument version, hence the second
+# fallback version.
+
+# All tested invocations will create a file in each platform's suitable
+# temporary directory.
 #
 # * `@stdout` path to temporary file
 # * `@return 0` if successful
@@ -585,19 +616,23 @@ info() {
 # # use file
 # ```
 mktemp_file() {
-  mktemp
+  mktemp 2>/dev/null || mktemp -t tmp
 }
 
-# Determines whether or not a program is available on the system PATH.
+# Prints an error message and exits with a non-zero code if the program is not
+# available on the system PATH.
 #
 # * `@param [String] program name
 # * `@stderr` a warning message is printed if program cannot be found
-# * `@return 0` if program is found on system PATH
-# * `@return 1` if program is not found
 #
 # # Environment Variables
 #
 # * `PATH` indirectly used to search for the program
+#
+# # Notes
+#
+# If the program is not found, this function calls `exit` and will **not**
+# return.
 #
 # # Examples
 #
@@ -606,25 +641,16 @@ mktemp_file() {
 # ```sh
 # need_cmd git
 # ```
-#
-# This function can also be used as a conditional check, however the standard
-# error may have to be redirected:
-#
-# ```sh
-# if need_cmd git 2>/dev/null; then
-#   echo "Found Git"
-# fi
-# ```
 need_cmd() {
   local _cmd
   _cmd="$1"
 
-  if ! command -v "$_cmd" >/dev/null 2>&1; then
+  if ! check_cmd "$_cmd"; then
     die "Required command '$_cmd' not found on PATH"
-    return 1
   fi
 
   unset _cmd
+  return 0
 }
 
 # Prints program version information to standard out.
@@ -695,7 +721,7 @@ print_version() {
     _verbose="$1"
   fi
 
-  if need_cmd git 2>/dev/null \
+  if check_cmd git \
     && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     local _date _sha
     _date="$(git show -s --format=%ad --date=short)"
@@ -766,6 +792,65 @@ section() {
   unset _msg
 }
 
+# Sets up traps for `EXIT` and common signals with the given cleanup function.
+#
+# In addition to `EXIT`, the `HUP`, `INT`, `QUIT`, `ALRM`, and `TERM` signals
+# are also covered.
+#
+# This implementation was based on a very nice, portable signal handling thread
+# thanks to: https://unix.stackexchange.com/a/240736
+#
+# * `@param [String]` name of function to run with traps
+#
+# # Examples
+#
+# Basic usage with a simple "hello world" cleanup function:
+#
+# ```sh
+# hello_trap() {
+#   echo "Hello, trap!"
+# }
+#
+# setup_traps hello_trap
+# ```
+#
+# If the cleanup is simple enough to be a one-liner, you can provide the
+# command as the single argument:
+#
+# ```sh
+# setup_traps "echo 'Hello, World!'"
+# ```
+setup_traps() {
+  local _trap_fun
+  _trap_fun="$1"
+
+  local _sig
+  for _sig in HUP INT QUIT ALRM TERM; do
+    trap "
+      $_trap_fun
+      trap - $_sig EXIT
+      kill -s $_sig "'"$$"' "$_sig"
+  done
+
+  if [ -n "${ZSH_VERSION:-}" ]; then
+    # Zsh uses the `EXIT` trap for a function if declared in a function.
+    # Instead, use the `zshexit()` hook function which targets the exiting of a
+    # shell interpreter. Additionally, a function in Zsh is not a closure over
+    # outer variables, so we'll use `eval` to construct the function body
+    # containing the cleanup function to invoke.
+    #
+    # See:
+    # * https://stackoverflow.com/a/22794374
+    # * http://zsh.sourceforge.net/Doc/Release/Functions.html#Hook-Functions
+    eval "zshexit() { eval '$_trap_fun'; }"
+  else
+    # shellcheck disable=SC2064
+    trap "$_trap_fun" EXIT
+  fi
+
+  unset _trap_fun _sig
+}
+
 # Removes any tracked files registered via [`cleanup_file`].
 #
 # * `@return 0` whether or not an error has occurred
@@ -798,6 +883,40 @@ trap_cleanup_files() {
     done <"$__CLEANUP_FILES__"
     rm -f "$__CLEANUP_FILES__"
   fi
+}
+
+# Prints a warning message to standard out.
+#
+# * `@param [String]` warning text
+# * `@stdout` warning heading text
+# * `@return 0` if successful
+#
+# # Environment Variables
+#
+# * `TERM` used to determine whether or not the terminal is capable of printing
+#   colored output.
+#
+# # Examples
+#
+# Basic usage:
+#
+# ```sh
+# warn "Could not connect to service"
+# ```
+warn() {
+  local _msg
+  _msg="$1"
+
+  case "${TERM:-}" in
+    *term | xterm-* | rxvt | screen | screen-*)
+      printf -- "\033[1;31;40m!!! \033[1;37;40m%s\033[0m\n" "$_msg"
+      ;;
+    *)
+      printf -- "!!! %s\n" "$_msg"
+      ;;
+  esac
+
+  unset _msg
 }
 
 # END: libsh.sh
