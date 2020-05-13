@@ -74,7 +74,7 @@ task:
             PKG: shells/zsh
       name: test_freebsd_$SHELL_BIN
       freebsd_instance:
-        image: freebsd-11-2-release-amd64
+        image_family: freebsd-12-1-snap
       setup_script: |
         pkg install --yes devel/git devel/gmake textproc/gsed
         if [ -n "${PKG:-}" ]; then pkg install --yes "$PKG"; fi
