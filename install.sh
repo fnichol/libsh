@@ -350,11 +350,11 @@ version_ge() {
 # --------
 # project: https://github.com/fnichol/libsh
 # author: Fletcher Nichol <fnichol@nichol.ca>
-# version: 0.2.0
-# commit-hash: 862501231edae690f6a28ecee7252c452e1740c0
-# commit-date: 2019-11-25
-# source: https://github.com/fnichol/libsh/tree/v0.2.0
-# archive: https://github.com/fnichol/libsh/archive/v0.2.0.tar.gz
+# version: 0.3.0
+# commit-hash: 93eace4d0d5ea71173bbf5861826910baa9f86a8
+# commit-date: 2020-05-13
+# source: https://github.com/fnichol/libsh/tree/v0.3.0
+# archive: https://github.com/fnichol/libsh/archive/v0.3.0.tar.gz
 #
 
 if [ -n "${KSH_VERSION:-}" ]; then
@@ -488,8 +488,9 @@ die() {
 # Downloads the contents at the given URL to the given local file.
 #
 # This implementation attempts to use the `curl` program with a fallback to the
-# `wget` program. The first download program to succeed is used and if all
-# fail, this function returns a non-zero code.
+# `wget` program and a final fallback to the `ftp` program. The first download
+# program to succeed is used and if all fail, this function returns a non-zero
+# code.
 #
 # * `@param [String]` download URL
 # * `@param [String]` destination file
@@ -498,8 +499,8 @@ die() {
 #
 # # Notes
 #
-# At least one of `curl` or `wget` must be compiled with SSL/TLS support to be
-# able to download from `https` sources.
+# At least one of `curl`, `wget`, or `ftp must be compiled with SSL/TLS support
+# to be able to download from `https` sources.
 #
 # # Examples
 #
@@ -555,10 +556,83 @@ download() {
     fi
   fi
 
+  # Attempt to download with ftp, if found. If successful, quick return
+  if check_cmd ftp; then
+    info "Downloading $_url to $_dst (ftp)"
+    _orig_flags="$-"
+    set +e
+    ftp -o "$_dst" "$_url"
+    _code="$?"
+    set "-$(echo "$_orig_flags" | sed s/s//g)"
+    if [ $_code -eq 0 ]; then
+      unset _url _dst _code _orig_flags
+      return 0
+    else
+      local _e
+      _e="ftp failed to download file, perhaps ftp doesn't have"
+      _e="$_e SSL support and/or no CA certificates are present?"
+      warn "$_e"
+      unset _e
+    fi
+  fi
+
   unset _url _dst _code _orig_flags
-  # If we reach this point, wget and curl have failed and we're out of options
-  warn "Downloading requires SSL-enabled 'curl' or 'wget' on PATH"
+  # If we reach this point, curl, wget and ftp have failed and we're out of
+  # options
+  warn "Downloading requires SSL-enabled 'curl', 'wget', or 'ftp' on PATH"
   return 1
+}
+
+# Indents the output from a command while preserving the command's exit code.
+#
+# In minimal/POSIX shells there is no support for `set -o pipefail` which means
+# that the exit code of the first command in a shell pipeline won't be
+# addressable in an easy way. This implementation uses a temp file to ferry the
+# original command's exit code from a subshell back into the main function. The
+# output can be aligned with a pipe to `sed` as before but now we have an
+# implementation which mimicks a `set -o pipefail` which should work on all
+# Bourne shells. Note that the `set -o errexit` is disabled during the
+# command's invocation so that its exit code can be captured.
+#
+# Based on implementation from: https://stackoverflow.com/a/54931544
+#
+# * `@param [String[]]` command and arguments
+# * `@return` the exit code of the command which was executed
+#
+# # Notes
+#
+# In order to preserve the output order of the command, the `stdout` and
+# `stderr` streams are combined, so the command will not emit its `stderr`
+# output to the caller's `stderr` stream.
+#
+# # Examples
+#
+# Basic usage:
+#
+# ```sh
+# indent cat /my/file
+# ```
+indent() {
+  local _ecfile _ec _orig_flags
+
+  need_cmd cat
+  need_cmd rm
+  need_cmd sed
+
+  _ecfile="$(mktemp_file)"
+
+  _orig_flags="$-"
+  set +e
+  {
+    "$@" 2>&1
+    echo "$?" >"$_ecfile"
+  } | sed 's/^/       /'
+  set "-$(echo "$_orig_flags" | sed s/s//g)"
+  _ec="$(cat "$_ecfile")"
+  rm -f "$_ecfile"
+
+  unset _ecfile _orig_flags
+  return "${_ec:-5}"
 }
 
 # Prints an informational, detailed step to standard out.
