@@ -116,7 +116,7 @@ testDownloadFakeSucceedingCurl() {
     echo 'exit 0'
   } >>"$isolated_path/curl"
 
-  # Clear `PATH` so the real `curl` and `wget`programs cannot be found
+  # Clear `PATH` so the real `curl`, `wget`, and `ftp` programs cannot be found
   export PATH="$isolated_path"
   run download "$url" "$file"
   # Restore `PATH`
@@ -148,7 +148,7 @@ testDownloadFakeFailingCurlWithFakeSucceedingWget() {
     echo 'exit 0'
   } >>"$isolated_path/wget"
 
-  # Clear `PATH` so the real `curl` and `wget`programs cannot be found
+  # Clear `PATH` so the real `curl`, `wget`, and `ftp` programs cannot be found
   export PATH="$isolated_path"
   run download "$url" "$file"
   # Restore `PATH`
@@ -175,7 +175,7 @@ testDownloadFakeSucceedingWget() {
     echo 'exit 0'
   } >>"$isolated_path/wget"
 
-  # Clear `PATH` so the real `curl` and `wget`programs cannot be found
+  # Clear `PATH` so the real `curl`, `wget`, and `ftp` programs cannot be found
   export PATH="$isolated_path"
   run download "$url" "$file"
   # Restore `PATH`
@@ -187,7 +187,7 @@ testDownloadFakeSucceedingWget() {
   assertStderrEquals "wget -q -O $file $url"
 }
 
-testDownloadFakeFailingCurlWithFakeFailingWget() {
+testDownloadFakeFailingCurlWithFakeFailingWgetWithFakeSucceedingFtp() {
   local url file
   url="http://example.com"
   file="/not/important"
@@ -205,8 +205,54 @@ testDownloadFakeFailingCurlWithFakeFailingWget() {
     echo '#!/usr/bin/env sh'
     echo 'exit 1'
   } >>"$isolated_path/wget"
+  touch "$isolated_path/ftp"
+  chmod 0755 "$isolated_path/ftp"
+  {
+    echo '#!/usr/bin/env sh'
+    echo 'echo "ftp $@" >&2'
+    echo 'exit 0'
+  } >>"$isolated_path/ftp"
 
-  # Clear `PATH` so the real `curl` and `wget`programs cannot be found
+  # Clear `PATH` so the real `curl`, `wget`, and `ftp` programs cannot be found
+  export PATH="$isolated_path"
+  run download "$url" "$file"
+  # Restore `PATH`
+  export PATH="$__ORIG_PATH"
+
+  assertTrue 'download failed' "$return_status"
+  assertStdoutStripAnsiContains "Downloading $url to $file"
+  assertStdoutStripAnsiContains "curl failed to download file"
+  assertStdoutStripAnsiContains "wget failed to download file"
+  assertStdoutStripAnsiContains "ftp"
+  assertStderrEquals "ftp -o $file $url"
+}
+
+testDownloadFakeFailingCurlWithFakeFailingWgetWithFakeFailingFtp() {
+  local url file
+  url="http://example.com"
+  file="/not/important"
+
+  isolatedPathFor sh grep sed printf
+  touch "$isolated_path/curl"
+  chmod 0755 "$isolated_path/curl"
+  {
+    echo '#!/usr/bin/env sh'
+    echo 'exit 1'
+  } >>"$isolated_path/curl"
+  touch "$isolated_path/wget"
+  chmod 0755 "$isolated_path/wget"
+  {
+    echo '#!/usr/bin/env sh'
+    echo 'exit 1'
+  } >>"$isolated_path/wget"
+  touch "$isolated_path/ftp"
+  chmod 0755 "$isolated_path/ftp"
+  {
+    echo '#!/usr/bin/env sh'
+    echo 'exit 1'
+  } >>"$isolated_path/ftp"
+
+  # Clear `PATH` so the real `curl`, `wget`, and `ftp` programs cannot be found
   export PATH="$isolated_path"
   run download "$url" "$file"
   # Restore `PATH`
@@ -216,13 +262,40 @@ testDownloadFakeFailingCurlWithFakeFailingWget() {
   assertStdoutStripAnsiContains "Downloading $url to $file"
   assertStdoutStripAnsiContains "curl failed to download file"
   assertStdoutStripAnsiContains "wget failed to download file"
+  assertStdoutStripAnsiContains "ftp failed to download file"
   assertStdoutStripAnsiContains "Downloading requires SSL-enabled"
   assertStderrNull
 }
 
-testDownloadNoWgetOrCurl() {
+testDownloadFakeSucceedingFtp() {
+  local url file
+  url="http://example.com"
+  file="/not/important"
+
+  isolatedPathFor sh grep sed printf
+  touch "$isolated_path/ftp"
+  chmod 0755 "$isolated_path/ftp"
+  {
+    echo '#!/usr/bin/env sh'
+    echo 'echo "ftp $@" >&2'
+    echo 'exit 0'
+  } >>"$isolated_path/ftp"
+
+  # Clear `PATH` so the real `curl`, `wget`, and `ftp` programs cannot be found
+  export PATH="$isolated_path"
+  run download "$url" "$file"
+  # Restore `PATH`
+  export PATH="$__ORIG_PATH"
+
+  assertTrue 'download failed' "$return_status"
+  assertStdoutStripAnsiContains "Downloading $url to $file"
+  assertStdoutStripAnsiContains "ftp"
+  assertStderrEquals "ftp -o $file $url"
+}
+
+testDownloadNoWgetOrCurlOrFtp() {
   isolatedPathFor grep sed printf
-  # Clear `PATH` so the real `curl` and `wget`programs cannot be found
+  # Clear `PATH` so the real `curl`, `wget`, and `ftp` programs cannot be found
   export PATH="$isolated_path"
   run download "http://example.com" "/not/important"
   # Restore `PATH`
