@@ -154,8 +154,9 @@ die() {
 # Downloads the contents at the given URL to the given local file.
 #
 # This implementation attempts to use the `curl` program with a fallback to the
-# `wget` program. The first download program to succeed is used and if all
-# fail, this function returns a non-zero code.
+# `wget` program and a final fallback to the `ftp` program. The first download
+# program to succeed is used and if all fail, this function returns a non-zero
+# code.
 #
 # * `@param [String]` download URL
 # * `@param [String]` destination file
@@ -164,8 +165,8 @@ die() {
 #
 # # Notes
 #
-# At least one of `curl` or `wget` must be compiled with SSL/TLS support to be
-# able to download from `https` sources.
+# At least one of `curl`, `wget`, or `ftp must be compiled with SSL/TLS support
+# to be able to download from `https` sources.
 #
 # # Examples
 #
@@ -221,9 +222,30 @@ download() {
     fi
   fi
 
+  # Attempt to download with ftp, if found. If successful, quick return
+  if check_cmd ftp; then
+    info "Downloading $_url to $_dst (ftp)"
+    _orig_flags="$-"
+    set +e
+    ftp -o "$_dst" "$_url"
+    _code="$?"
+    set "-$(echo "$_orig_flags" | sed s/s//g)"
+    if [ $_code -eq 0 ]; then
+      unset _url _dst _code _orig_flags
+      return 0
+    else
+      local _e
+      _e="ftp failed to download file, perhaps ftp doesn't have"
+      _e="$_e SSL support and/or no CA certificates are present?"
+      warn "$_e"
+      unset _e
+    fi
+  fi
+
   unset _url _dst _code _orig_flags
-  # If we reach this point, wget and curl have failed and we're out of options
-  warn "Downloading requires SSL-enabled 'curl' or 'wget' on PATH"
+  # If we reach this point, curl, wget and ftp have failed and we're out of
+  # options
+  warn "Downloading requires SSL-enabled 'curl', 'wget', or 'ftp' on PATH"
   return 1
 }
 
