@@ -2,11 +2,12 @@
 # shellcheck disable=SC2039
 
 print_usage() {
-  need_cmd sed
+  local program version author
+  program="$1"
+  version="$2"
+  author="$3"
 
-  local program="$1"
-  local version="$2"
-  local author="$3"
+  need_cmd sed
 
   echo "$program $version
 
@@ -189,8 +190,9 @@ invoke_cli() {
 }
 
 download_libsh() {
-  local release="$1"
-  local target="$2"
+  local release target
+  release="$1"
+  target="$2"
 
   download \
     "https://github.com/fnichol/libsh/releases/download/v${release}/libsh.sh" \
@@ -198,8 +200,9 @@ download_libsh() {
 }
 
 insert_libsh() {
-  local release="$1"
-  local target="$2"
+  local release target
+  release="$1"
+  target="$2"
 
   local libsh rendered
   libsh="$(mktemp_file)"
@@ -258,7 +261,8 @@ insert_libsh() {
 }
 
 is_mode_valid() {
-  local mode="$1"
+  local mode
+  mode="$1"
 
   case "$mode" in
     vendor | insert)
@@ -302,13 +306,14 @@ latest_release() {
 }
 
 vendor_libsh() {
+  local release target
+  release="$1"
+  target="$2"
+
   need_cmd cat
   need_cmd touch
   need_cmd dirname
   need_cmd mkdir
-
-  local release="$1"
-  local target="$2"
 
   local tmpfile
   tmpfile="$(mktemp_file)"
@@ -325,11 +330,12 @@ vendor_libsh() {
 }
 
 version_ge() {
-  need_cmd awk
+  local version maj min
+  version="$1"
+  maj="$2"
+  min="$3"
 
-  local version="$1"
-  local maj="$2"
-  local min="$3"
+  need_cmd awk
 
   [ "$(echo "$version" | awk -F'.' '{ print $1 }')" -ge "$maj" ] \
     && [ "$(echo "$version" | awk -F'.' '{ print $2 }')" -ge "$min" ]
