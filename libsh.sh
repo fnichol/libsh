@@ -344,6 +344,7 @@ info() {
 # All tested invocations will create a file in each platform's suitable
 # temporary directory.
 #
+# * `@param [optional, String] parent directory
 # * `@stdout` path to temporary directory
 # * `@return 0` if successful
 #
@@ -355,8 +356,22 @@ info() {
 # dir="$(mktemp_directory)"
 # # use directory
 # ```
+#
+# With a custom parent directory:
+#
+# ```sh
+# dir="$(mktemp_directory $HOME)"
+# # use directory
+# ```
 mktemp_directory() {
-  mktemp -d 2>/dev/null || mktemp -d -t tmp
+  local _parent_dir
+  _parent_dir="${1:-}"
+
+  if [ -n "$_parent_dir" ]; then
+    mktemp -d "$_parent_dir/tmp.XXXXXX"
+  else
+    mktemp -d 2>/dev/null || mktemp -d -t tmp
+  fi
 }
 
 # Creates a temporary file and prints the name to standard output.
@@ -368,6 +383,7 @@ mktemp_directory() {
 # All tested invocations will create a file in each platform's suitable
 # temporary directory.
 #
+# * `@param [optional, String] parent directory
 # * `@stdout` path to temporary file
 # * `@return 0` if successful
 #
@@ -379,8 +395,25 @@ mktemp_directory() {
 # file="$(mktemp_file)"
 # # use file
 # ```
+# shellcheck disable=SC2120
+#
+# With a custom parent directory:
+#
+# ```sh
+# dir="$(mktemp_file $HOME)"
+# # use file
+# ```
 mktemp_file() {
-  mktemp 2>/dev/null || mktemp -t tmp
+  local _parent_dir
+  _parent_dir="${1:-}"
+
+  if [ -n "$_parent_dir" ]; then
+    mktemp "$_parent_dir/tmp.XXXXXX"
+  else
+    mktemp 2>/dev/null || mktemp -t tmp
+  fi
+
+  unset _parent_dir
 }
 
 # Prints an error message and exits with a non-zero code if the program is not
