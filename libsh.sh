@@ -139,7 +139,7 @@ die() {
   _msg="$1"
 
   case "${TERM:-}" in
-    *term | xterm-* | rxvt | screen | screen-*)
+    *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
       printf -- "\n\033[1;31;40mxxx \033[1;37;40m%s\033[0m\n\n" "$_msg" >&2
       ;;
     *)
@@ -324,7 +324,7 @@ info() {
   _msg="$1"
 
   case "${TERM:-}" in
-    *term | xterm-* | rxvt | screen | screen-*)
+    *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
       printf -- "\033[1;36;40m  - \033[1;37;40m%s\033[0m\n" "$_msg"
       ;;
     *)
@@ -521,7 +521,7 @@ section() {
   _msg="$1"
 
   case "${TERM:-}" in
-    *term | xterm-* | rxvt | screen | screen-*)
+    *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
       printf -- "\033[1;36;40m--- \033[1;37;40m%s\033[0m\n" "$_msg"
       ;;
     *)
@@ -648,7 +648,7 @@ warn() {
   _msg="$1"
 
   case "${TERM:-}" in
-    *term | xterm-* | rxvt | screen | screen-*)
+    *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
       printf -- "\033[1;31;40m!!! \033[1;37;40m%s\033[0m\n" "$_msg"
       ;;
     *)
