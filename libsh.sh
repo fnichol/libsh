@@ -335,6 +335,30 @@ info() {
   unset _msg
 }
 
+# Creates a temporary directory and prints the name to standard output.
+#
+# Most system use the first no-argument version, however Mac OS X 10.10
+# (Yosemite) and older don't allow the no-argument version, hence the second
+# fallback version.
+#
+# All tested invocations will create a file in each platform's suitable
+# temporary directory.
+#
+# * `@stdout` path to temporary directory
+# * `@return 0` if successful
+#
+# # Examples
+#
+# Basic usage:
+#
+# ```sh
+# dir="$(mktemp_directory)"
+# # use directory
+# ```
+mktemp_directory() {
+  mktemp -d 2>/dev/null || mktemp -d -t tmp
+}
+
 # Creates a temporary file and prints the name to standard output.
 #
 # Most systems use the first no-argument version, however Mac OS X 10.10
