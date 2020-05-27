@@ -20,7 +20,6 @@ print_usage() {
     FLAGS:
         -h, --help      Prints help information
         -V, --version   Prints version information
-        -v, --verbose   Prints verbose output
 
     OPTIONS:
         -m, --mode=<MODE>       Install mode
@@ -62,113 +61,13 @@ main() {
   version="0.1.0"
   author="Fletcher Nichol <fnichol@nichol.ca>"
 
-  invoke_cli "$program" "$version" "$author" "$@"
-}
-
-invoke_cli() {
-  local program version author mode release target
-  program="$1"
-  shift
-  version="$1"
-  shift
-  author="$1"
-  shift
-
-  VERBOSE=""
-  mode="vendor"
-  release="latest"
-  target="./vendor/lib/libsh.sh"
-
-  OPTIND=1
-  while getopts "hm:r:t:vV-:" arg; do
-    case "$arg" in
-      h)
-        print_usage "$program" "$version" "$author"
-        return 0
-        ;;
-      m)
-        if is_mode_valid "$OPTARG"; then
-          mode="$OPTARG"
-        else
-          print_usage "$program" "$version" "$author" >&2
-          die "invalid mode name $OPTARG"
-          return 1
-        fi
-        ;;
-      r)
-        release="$OPTARG"
-        ;;
-      t)
-        target="$OPTARG"
-        ;;
-      v)
-        VERBOSE=true
-        ;;
-      V)
-        print_version "$program" "$version" "${VERBOSE:-}"
-        return 0
-        ;;
-      -)
-        long_optarg="${OPTARG#*=}"
-        case "$OPTARG" in
-          help)
-            print_usage "$program" "$version" "$author"
-            return 0
-            ;;
-          mode=?*)
-            if is_mode_valid "$long_optarg"; then
-              mode="$long_optarg"
-            else
-              print_usage "$program" "$version" "$author" >&2
-              die "invalid mode name '$long_optarg'"
-              return 1
-            fi
-            ;;
-          mode*)
-            print_usage "$program" "$version" "$author" >&2
-            die "missing required argument for --$OPTARG option"
-            return 1
-            ;;
-          release=?*)
-            release="$long_optarg"
-            ;;
-          release*)
-            print_usage "$program" "$version" "$author" >&2
-            die "missing required argument for --$OPTARG option"
-            return 1
-            ;;
-          target=?*)
-            target="$long_optarg"
-            ;;
-          target*)
-            print_usage "$program" "$version" "$author" >&2
-            die "missing required argument for --$OPTARG option"
-            return 1
-            ;;
-          verbose)
-            VERBOSE=true
-            ;;
-          version)
-            print_version "$program" "$version" "${VERBOSE:-}"
-            return 0
-            ;;
-          '')
-            # "--" terminates argument processing
-            break
-            ;;
-          *)
-            print_usage "$program" "$version" "$author" >&2
-            die "invalid argument --$OPTARG"
-            ;;
-        esac
-        ;;
-      \?)
-        print_usage "$program" "$version" "$author" >&2
-        die "invalid argument; arg=-$OPTARG"
-        ;;
-    esac
-  done
-  shift "$((OPTIND - 1))"
+  # Parse CLI arguments and set local variables
+  parse_cli_args "$program" "$version" "$author" "$@"
+  local mode release target
+  mode="$MODE"
+  release="$RELEASE"
+  target="$TARGET"
+  unset MODE RELEASE TARGET
 
   setup_traps trap_cleanup_files
 
@@ -187,6 +86,100 @@ invoke_cli() {
       die "invalid mode value; mode=$mode"
       ;;
   esac
+}
+
+parse_cli_args() {
+  local program version author mode release target
+  program="$1"
+  shift
+  version="$1"
+  shift
+  author="$1"
+  shift
+
+  MODE="vendor"
+  RELEASE="latest"
+  TARGET="./vendor/lib/libsh.sh"
+
+  OPTIND=1
+  while getopts "hm:r:t:V-:" arg; do
+    case "$arg" in
+      h)
+        print_usage "$program" "$version" "$author"
+        exit 0
+        ;;
+      m)
+        if is_mode_valid "$OPTARG"; then
+          MODE="$OPTARG"
+        else
+          print_usage "$program" "$version" "$author" >&2
+          die "invalid mode name $OPTARG"
+        fi
+        ;;
+      r)
+        RELEASE="$OPTARG"
+        ;;
+      t)
+        TARGET="$OPTARG"
+        ;;
+      V)
+        print_version "$program" "$version"
+        exit 0
+        ;;
+      -)
+        long_optarg="${OPTARG#*=}"
+        case "$OPTARG" in
+          help)
+            print_usage "$program" "$version" "$author"
+            exit 0
+            ;;
+          mode=?*)
+            if is_mode_valid "$long_optarg"; then
+              MODE="$long_optarg"
+            else
+              print_usage "$program" "$version" "$author" >&2
+              die "invalid mode name '$long_optarg'"
+            fi
+            ;;
+          mode*)
+            print_usage "$program" "$version" "$author" >&2
+            die "missing required argument for --$OPTARG option"
+            ;;
+          release=?*)
+            RELEASE="$long_optarg"
+            ;;
+          release*)
+            print_usage "$program" "$version" "$author" >&2
+            die "missing required argument for --$OPTARG option"
+            ;;
+          target=?*)
+            TARGET="$long_optarg"
+            ;;
+          target*)
+            print_usage "$program" "$version" "$author" >&2
+            die "missing required argument for --$OPTARG option"
+            ;;
+          version)
+            print_version "$program" "$version" "true"
+            exit 0
+            ;;
+          '')
+            # "--" terminates argument processing
+            break
+            ;;
+          *)
+            print_usage "$program" "$version" "$author" >&2
+            die "invalid argument --$OPTARG"
+            ;;
+        esac
+        ;;
+      \?)
+        print_usage "$program" "$version" "$author" >&2
+        die "invalid argument; arg=-$OPTARG"
+        ;;
+    esac
+  done
+  shift "$((OPTIND - 1))"
 }
 
 download_libsh() {
