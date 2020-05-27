@@ -124,10 +124,12 @@ run() {
   set +e
   # functrace is not supported by all shells, eg: dash
   if set -o | "${GREP:-grep}" -q '^functrace'; then
+    # shellcheck disable=SC2039
     set +T
   fi
   # errtrace is not supported by all shells, eg: ksh
   if set -o | "${GREP:-grep}" -q '^errtrace'; then
+    # shellcheck disable=SC2039
     set +E
   fi
   "$@" >"$stdout" 2>"$stderr"
@@ -231,6 +233,7 @@ isolatedPathFor() {
 
 shell_compat() {
   if [ -n "${ZSH_VERSION:-}" ]; then
+    # shellcheck disable=SC2039
     set -o shwordsplit
     SHUNIT_PARENT="$1"
   fi
