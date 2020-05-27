@@ -380,11 +380,33 @@ testMktempFile() {
   assertTrue 'temp file cannot be removed' "rm $(cat "$stdout")"
 }
 
+testMktempFileParentDir() {
+  run mktemp_file "$tmppath"
+
+  assertTrue 'mktemp_file failed' "$return_status"
+  assertTrue 'result is not a file' "[ -f '$(cat "$stdout")' ]"
+  assertTrue 'parent dir not is tmppath' \
+    "[ '$(dirname "$stdout")' = '$tmppath' ]"
+  assertStderrNull
+  assertTrue 'temp file cannot be removed' "rm $(cat "$stdout")"
+}
+
 testMktempDirectory() {
   run mktemp_directory
 
   assertTrue 'mktemp_directory failed' "$return_status"
   assertTrue 'result is not a directory' "[ -d '$(cat "$stdout")' ]"
+  assertStderrNull
+  assertTrue 'temp directory cannot be removed' "rmdir $(cat "$stdout")"
+}
+
+testMktempDirectoryParentDir() {
+  run mktemp_directory "$tmppath"
+
+  assertTrue 'mktemp_directory failed' "$return_status"
+  assertTrue 'result is not a directory' "[ -d '$(cat "$stdout")' ]"
+  assertTrue 'parent dir not is tmppath' \
+    "[ '$(dirname "$stdout")' = '$tmppath' ]"
   assertStderrNull
   assertTrue 'temp directory cannot be removed' "rmdir $(cat "$stdout")"
 }
