@@ -204,6 +204,9 @@ insert_libsh() {
   release="$1"
   target="$2"
 
+  need_cmd awk
+  need_cmd cat
+
   local libsh rendered
   libsh="$(mktemp_file)"
   cleanup_file "$libsh"
