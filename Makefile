@@ -44,3 +44,16 @@ build/libsh.sh:
 	chmod 755 $@
 	cd build && $(MD5_CMD) $$(basename $@) > $$(basename $@).md5
 	cd build && $(SHASUM_CMD) $$(basename $@) > $$(basename $@).sha256
+
+update-install-vendor: ## Update the version of the inlined libsh in install.sh
+	@echo "--- $@"
+	@{ \
+	set -eu; \
+	. libsh.sh; \
+	setup_traps trap_cleanup_files; \
+	install_copy="$$(mktemp_file)"; \
+	cleanup_file "$$install_copy"; \
+	cp -p install.sh "$$install_copy"; \
+	"$$install_copy" --mode=insert --target=install.sh; \
+	}
+.PHONY: update-install-vendor
