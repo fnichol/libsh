@@ -31,6 +31,40 @@ testCheckCmdMissing() {
   assertStderrNull
 }
 
+testCleanupDirectory() {
+  local directory
+  __CLEANUP_DIRECTORIES__="$(mktemp_file)"
+  directory="$(mktemp_directory)"
+  run cleanup_directory "$directory"
+
+  assertTrue 'cleanup_directory failed' "$return_status"
+  assertEquals "$(cat "$__CLEANUP_DIRECTORIES__")" "$directory"
+  assertTrue 'directories could not be removed' \
+    "rm -rf '$__CLEANUP_DIRECTORIES__' '$directory'"
+
+  assertStdoutNull
+  assertStderrNull
+
+  unset directory
+}
+
+testCleanupDirectoryNoVar() {
+  local directory
+  unset __CLEANUP_DIRECTORIES__
+  directory="$(mktemp_directory)"
+  run cleanup_directory "$directory"
+
+  assertTrue 'cleanup_directory failed' "$return_status"
+  assertEquals "$(cat "$__CLEANUP_DIRECTORIES__")" "$directory"
+  assertTrue 'directories could not be removed' \
+    "rm -rf '$__CLEANUP_DIRECTORIES__' '$directory'"
+
+  assertStdoutNull
+  assertStderrNull
+
+  unset directory
+}
+
 testCleanupFile() {
   local file
   __CLEANUP_FILES__="$(mktemp_file)"
@@ -617,6 +651,54 @@ trap fired"
 
 # testSetupTrapsQUIT - does not terminate script with test suite so is skipped
 
+testTrapCleanupDirectories() {
+  local alpha bravo charlie
+  __CLEANUP_FILES__="$(mktemp_file)"
+  alpha="$(mktemp_directory)"
+  echo "$alpha" >>"$__CLEANUP_DIRECTORIES__"
+  bravo="$(mktemp_directory)"
+  echo "$bravo" >>"$__CLEANUP_DIRECTORIES__"
+  charlie="$(mktemp_directory)"
+  echo "$charlie" >>"$__CLEANUP_DIRECTORIES__"
+
+  assertTrue 'cleanup directories does not exist' \
+    "[ -f '$__CLEANUP_DIRECTORIES__' ]"
+  assertTrue 'alpha does not exist' "[ -d '$alpha' ]"
+  assertTrue 'bravo does not exist' "[ -d '$bravo' ]"
+  assertTrue 'charlie does not exist' "[ -d '$charlie' ]"
+
+  assertTrue 'trap_cleanup_directories does not fail' trap_cleanup_directories
+
+  assertTrue 'cleanup files exists' "[ ! -f '$__CLEANUP_DIRECTORIES__' ]"
+  assertTrue 'alpha exists' "[ ! -d '$alpha' ]"
+  assertTrue 'bravo exists' "[ ! -d '$bravo' ]"
+  assertTrue 'charlie exists' "[ ! -d '$charlie' ]"
+
+  assertStdoutNull
+  assertStderrNull
+
+  unset alpha bravo charlie
+}
+
+testTrapCleanupDirectoriesNoVar() {
+  unset __CLEANUP_DIRECTORIES__
+
+  assertTrue 'trap_cleanup_directories does not fail' trap_cleanup_directories
+
+  assertStdoutNull
+  assertStderrNull
+}
+
+testTrapCleanupDirectoriesNoFile() {
+  __CLEANUP_DIRECTORIES__="$(mktemp_file)"
+  rm -f "$__CLEANUP_DIRECTORIES__"
+
+  assertTrue 'trap_cleanup_directories does not fail' trap_cleanup_directories
+
+  assertStdoutNull
+  assertStderrNull
+}
+
 testTrapCleanupFiles() {
   local alpha bravo charlie
   __CLEANUP_FILES__="$(mktemp_file)"
@@ -627,14 +709,14 @@ testTrapCleanupFiles() {
   charlie="$(mktemp_file)"
   echo "$charlie" >>"$__CLEANUP_FILES__"
 
-  assertTrue 'cleaup files does not exist' "[ -f '$__CLEANUP_FILES__' ]"
+  assertTrue 'cleanup files does not exist' "[ -f '$__CLEANUP_FILES__' ]"
   assertTrue 'alpha does not exist' "[ -f '$alpha' ]"
   assertTrue 'bravo does not exist' "[ -f '$bravo' ]"
   assertTrue 'charlie does not exist' "[ -f '$charlie' ]"
 
   assertTrue 'trap_cleanup_files does not fail' trap_cleanup_files
 
-  assertTrue 'cleaup files exists' "[ ! -f '$__CLEANUP_FILES__' ]"
+  assertTrue 'cleanup files exists' "[ ! -f '$__CLEANUP_FILES__' ]"
   assertTrue 'alpha exists' "[ ! -f '$alpha' ]"
   assertTrue 'bravo exists' "[ ! -f '$bravo' ]"
   assertTrue 'charlie exists' "[ ! -f '$charlie' ]"
@@ -645,7 +727,7 @@ testTrapCleanupFiles() {
   unset alpha bravo charlie
 }
 
-testTrapCleanupNoVar() {
+testTrapCleanupFilesNoVar() {
   unset __CLEANUP_FILES__
 
   assertTrue 'trap_cleanup_files does not fail' trap_cleanup_files
@@ -654,7 +736,7 @@ testTrapCleanupNoVar() {
   assertStderrNull
 }
 
-testTrapCleanupNoFile() {
+testTrapCleanupFilesNoFile() {
   __CLEANUP_FILES__="$(mktemp_file)"
   rm -f "$__CLEANUP_FILES__"
 
