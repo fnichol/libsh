@@ -405,6 +405,48 @@ testInfoAnsi() {
   assertStderrNull
 }
 
+testInfoEndStripAnsi() {
+  run info_end
+
+  assertTrue 'info_end failed' "$return_status"
+  assertStdoutStripAnsiEquals 'done.'
+  assertStderrNull
+}
+
+testInfoEndAnsi() {
+  printf -- '\033[1;37;40mdone.\033[0m\n' \
+    >"$expected"
+  export TERM=xterm
+  run info_end
+
+  assertTrue 'info_end failed' "$return_status"
+  # Shell string equals has issues with ANSI escapes, so let's use $(cmp) to
+  # compare byte by byte
+  assertTrue 'ANSI stdout not equal' "cmp '$expected' '$stdout'"
+  assertStderrNull
+}
+
+testInfoStartStripAnsi() {
+  run info_start 'something is happening'
+
+  assertTrue 'info_start failed' "$return_status"
+  assertStdoutStripAnsiEquals '  - something is happening ... '
+  assertStderrNull
+}
+
+testInfoStartAnsi() {
+  printf -- '\033[1;36;40m  - \033[1;37;40msomething ... \033[0m' \
+    >"$expected"
+  export TERM=xterm
+  run info_start 'something'
+
+  assertTrue 'info_start failed' "$return_status"
+  # Shell string equals has issues with ANSI escapes, so let's use $(cmp) to
+  # compare byte by byte
+  assertTrue 'ANSI stdout not equal' "cmp '$expected' '$stdout'"
+  assertStderrNull
+}
+
 testMktempFile() {
   run mktemp_file
 
