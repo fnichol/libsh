@@ -352,11 +352,11 @@ version_ge() {
 # --------
 # project: https://github.com/fnichol/libsh
 # author: Fletcher Nichol <fnichol@nichol.ca>
-# version: 0.5.0
-# commit-hash: 2bc3a2bcd68985caf697e165b0ec68042e04e164
-# commit-date: 2020-05-27
-# source: https://github.com/fnichol/libsh/tree/v0.5.0
-# archive: https://github.com/fnichol/libsh/archive/v0.5.0.tar.gz
+# version: 0.6.0
+# commit-hash: 5edc6607db5e8389d6ccde45a431dfca3d37cbe9
+# commit-date: 2020-12-30
+# source: https://github.com/fnichol/libsh/tree/v0.6.0
+# archive: https://github.com/fnichol/libsh/archive/v0.6.0.tar.gz
 #
 
 if [ -n "${KSH_VERSION:-}" ]; then
@@ -712,6 +712,69 @@ info() {
       ;;
     *)
       printf -- "  - %s\n" "$_msg"
+      ;;
+  esac
+
+  unset _msg
+}
+
+# Completes printing an informational, detailed step to standard out which has
+# no output, started with `info_start`
+#
+# * `@stdout` informational heading text
+# * `@return 0` if successful
+#
+# # Environment Variables
+#
+# * `TERM` used to determine whether or not the terminal is capable of printing
+#   colored output.
+#
+# # Examples
+#
+# Basic usage:
+#
+# ```sh
+# info_start "Copying file"
+# ```
+info_end() {
+  case "${TERM:-}" in
+    *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
+      printf -- "\033[1;37;40m%s\033[0m\n" "done."
+      ;;
+    *)
+      printf -- "%s\n" "done."
+      ;;
+  esac
+}
+
+# Prints an informational, detailed step to standard out which has no output.
+#
+# * `@param [String]` informational text
+# * `@stdout` informational heading text
+# * `@return 0` if successful
+#
+# # Environment Variables
+#
+# * `TERM` used to determine whether or not the terminal is capable of printing
+#   colored output.
+#
+# # Examples
+#
+# Basic usage:
+#
+# ```sh
+# info_start "Copying file"
+# ```
+info_start() {
+  local _msg
+  _msg="$1"
+
+  case "${TERM:-}" in
+    *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
+      printf -- "\033[1;36;40m  - \033[1;37;40m%s ... \033[0m" "$_msg"
+      ;;
+    *)
+      printf -- "  - %s ... " "$_msg"
       ;;
   esac
 
