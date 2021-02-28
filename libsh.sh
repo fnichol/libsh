@@ -55,15 +55,8 @@ fi
 #   echo "Found Git"
 # fi
 check_cmd() {
-  local _cmd
-  _cmd="$1"
-
-  if ! command -v "$_cmd" >/dev/null 2>&1; then
-    unset _cmd
+  if ! command -v "$1" >/dev/null 2>&1; then
     return 1
-  else
-    unset _cmd
-    return 0
   fi
 }
 
@@ -97,9 +90,6 @@ check_cmd() {
 # # do work on directory, etc.
 # ```
 cleanup_directory() {
-  local _dir
-  _dir="$1"
-
   # If a tempfile hasn't been setup yet, create it
   if [ -z "${__CLEANUP_DIRECTORIES__:-}" ]; then
     __CLEANUP_DIRECTORIES__="$(mktemp_file)"
@@ -110,8 +100,7 @@ cleanup_directory() {
     fi
   fi
 
-  echo "$_dir" >>"$__CLEANUP_DIRECTORIES__"
-  unset _dir
+  echo "$1" >>"$__CLEANUP_DIRECTORIES__"
 }
 
 # Tracks a file for later cleanup in a trap handler.
@@ -142,9 +131,6 @@ cleanup_directory() {
 # # do work on file, etc.
 # ```
 cleanup_file() {
-  local _file
-  _file="$1"
-
   # If a tempfile hasn't been setup yet, create it
   if [ -z "${__CLEANUP_FILES__:-}" ]; then
     __CLEANUP_FILES__="$(mktemp_file)"
@@ -155,8 +141,7 @@ cleanup_file() {
     fi
   fi
 
-  echo "$_file" >>"$__CLEANUP_FILES__"
-  unset _file
+  echo "$1" >>"$__CLEANUP_FILES__"
 }
 
 # Prints an error message to standard error and exits with a non-zero exit
@@ -182,19 +167,15 @@ cleanup_file() {
 # die "No program to download tarball"
 # ```
 die() {
-  local _msg
-  _msg="$1"
-
   case "${TERM:-}" in
     *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
-      printf -- "\n\033[1;31;40mxxx \033[1;37;40m%s\033[0m\n\n" "$_msg" >&2
+      printf -- "\n\033[1;31;40mxxx \033[1;37;40m%s\033[0m\n\n" "$1" >&2
       ;;
     *)
-      printf -- "\nxxx %s\n\n" "$_msg" >&2
+      printf -- "\nxxx %s\n\n" "$1" >&2
       ;;
   esac
 
-  unset _msg
   exit 1
 }
 
@@ -367,19 +348,14 @@ indent() {
 # info "Downloading tarball"
 # ```
 info() {
-  local _msg
-  _msg="$1"
-
   case "${TERM:-}" in
     *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
-      printf -- "\033[1;36;40m  - \033[1;37;40m%s\033[0m\n" "$_msg"
+      printf -- "\033[1;36;40m  - \033[1;37;40m%s\033[0m\n" "$1"
       ;;
     *)
-      printf -- "  - %s\n" "$_msg"
+      printf -- "  - %s\n" "$1"
       ;;
   esac
-
-  unset _msg
 }
 
 # Completes printing an informational, detailed step to standard out which has
@@ -430,19 +406,14 @@ info_end() {
 # info_start "Copying file"
 # ```
 info_start() {
-  local _msg
-  _msg="$1"
-
   case "${TERM:-}" in
     *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
-      printf -- "\033[1;36;40m  - \033[1;37;40m%s ... \033[0m" "$_msg"
+      printf -- "\033[1;36;40m  - \033[1;37;40m%s ... \033[0m" "$1"
       ;;
     *)
-      printf -- "  - %s ... " "$_msg"
+      printf -- "  - %s ... " "$1"
       ;;
   esac
-
-  unset _msg
 }
 
 # Creates a temporary directory and prints the name to standard output.
@@ -473,12 +444,11 @@ info_start() {
 # dir="$(mktemp_directory $HOME)"
 # # use directory
 # ```
-mktemp_directory() {
-  local _parent_dir
-  _parent_dir="${1:-}"
 
-  if [ -n "$_parent_dir" ]; then
-    mktemp -d "$_parent_dir/tmp.XXXXXX"
+# shellcheck disable=SC2120
+mktemp_directory() {
+  if [ -n "${1:-}" ]; then
+    mktemp -d "$1/tmp.XXXXXX"
   else
     mktemp -d 2>/dev/null || mktemp -d -t tmp
   fi
@@ -505,7 +475,6 @@ mktemp_directory() {
 # file="$(mktemp_file)"
 # # use file
 # ```
-# shellcheck disable=SC2120
 #
 # With a custom parent directory:
 #
@@ -513,17 +482,14 @@ mktemp_directory() {
 # dir="$(mktemp_file $HOME)"
 # # use file
 # ```
-mktemp_file() {
-  local _parent_dir
-  _parent_dir="${1:-}"
 
-  if [ -n "$_parent_dir" ]; then
-    mktemp "$_parent_dir/tmp.XXXXXX"
+# shellcheck disable=SC2120
+mktemp_file() {
+  if [ -n "${1:-}" ]; then
+    mktemp "$1/tmp.XXXXXX"
   else
     mktemp 2>/dev/null || mktemp -t tmp
   fi
-
-  unset _parent_dir
 }
 
 # Prints an error message and exits with a non-zero code if the program is not
@@ -549,15 +515,9 @@ mktemp_file() {
 # need_cmd git
 # ```
 need_cmd() {
-  local _cmd
-  _cmd="$1"
-
-  if ! check_cmd "$_cmd"; then
-    die "Required command '$_cmd' not found on PATH"
+  if ! check_cmd "$1"; then
+    die "Required command '$1' not found on PATH"
   fi
-
-  unset _cmd
-  return 0
 }
 
 # Prints program version information to standard out.
@@ -684,19 +644,14 @@ print_version() {
 # section "Building project"
 # ```
 section() {
-  local _msg
-  _msg="$1"
-
   case "${TERM:-}" in
     *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
-      printf -- "\033[1;36;40m--- \033[1;37;40m%s\033[0m\n" "$_msg"
+      printf -- "\033[1;36;40m--- \033[1;37;40m%s\033[0m\n" "$1"
       ;;
     *)
-      printf -- "--- %s\n" "$_msg"
+      printf -- "--- %s\n" "$1"
       ;;
   esac
-
-  unset _msg
 }
 
 # Sets up traps for `EXIT` and common signals with the given cleanup function.
@@ -728,13 +683,10 @@ section() {
 # setup_traps "echo 'Hello, World!'"
 # ```
 setup_traps() {
-  local _trap_fun
-  _trap_fun="$1"
-
   local _sig
   for _sig in HUP INT QUIT ALRM TERM; do
     trap "
-      $_trap_fun
+      $1
       trap - $_sig EXIT
       kill -s $_sig "'"$$"' "$_sig"
   done
@@ -749,13 +701,13 @@ setup_traps() {
     # See:
     # * https://stackoverflow.com/a/22794374
     # * http://zsh.sourceforge.net/Doc/Release/Functions.html#Hook-Functions
-    eval "zshexit() { eval '$_trap_fun'; }"
+    eval "zshexit() { eval '$1'; }"
   else
     # shellcheck disable=SC2064
-    trap "$_trap_fun" EXIT
+    trap "$1" EXIT
   fi
 
-  unset _trap_fun _sig
+  unset _sig
 }
 
 # Removes any tracked directories registered via [`cleanup_directory`].
@@ -786,9 +738,11 @@ trap_cleanup_directories() {
 
   if [ -n "${__CLEANUP_DIRECTORIES__:-}" ] \
     && [ -f "$__CLEANUP_DIRECTORIES__" ]; then
-    while read -r directory; do
-      rm -rf "$directory"
+    local _dir
+    while read -r _dir; do
+      rm -rf "$_dir"
     done <"$__CLEANUP_DIRECTORIES__"
+    unset _dir
     rm -f "$__CLEANUP_DIRECTORIES__"
   fi
 }
@@ -820,9 +774,11 @@ trap_cleanup_files() {
   set +e
 
   if [ -n "${__CLEANUP_FILES__:-}" ] && [ -f "$__CLEANUP_FILES__" ]; then
-    while read -r file; do
-      rm -f "$file"
+    local _file
+    while read -r _file; do
+      rm -f "$_file"
     done <"$__CLEANUP_FILES__"
+    unset _file
     rm -f "$__CLEANUP_FILES__"
   fi
 }
@@ -846,19 +802,14 @@ trap_cleanup_files() {
 # warn "Could not connect to service"
 # ```
 warn() {
-  local _msg
-  _msg="$1"
-
   case "${TERM:-}" in
     *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
-      printf -- "\033[1;31;40m!!! \033[1;37;40m%s\033[0m\n" "$_msg"
+      printf -- "\033[1;31;40m!!! \033[1;37;40m%s\033[0m\n" "$1"
       ;;
     *)
-      printf -- "!!! %s\n" "$_msg"
+      printf -- "!!! %s\n" "$1"
       ;;
   esac
-
-  unset _msg
 }
 
 # END: libsh.sh
