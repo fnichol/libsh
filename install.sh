@@ -26,7 +26,7 @@ print_usage() {
                                 [values: vendor, insert]
                                 [default: vendor]
         -r, --release=<RELEASE> Release version
-                                [examples: latest, 1.2.3, master]
+                                [examples: latest, 1.2.3, main]
                                 [default: latest]
         -t, --target=<TARGET>   Target directory or file for installation
                                 [examples: /tmp/libsh.sh, file.txt]

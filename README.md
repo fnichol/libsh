@@ -70,7 +70,7 @@ dual licensed as above, without any additional terms or conditions.
 [github]: https://github.com/fnichol/libsh
 [issues]: https://github.com/fnichol/libsh/issues
 [license]: #license
-[license-apachev2]: https://github.com/fnichol/libsh/blob/master/LICENSE-APACHE
-[license-mit]: https://github.com/fnichol/libsh/blob/master/LICENSE-MIT
+[license-apachev2]: https://github.com/fnichol/libsh/blob/main/LICENSE-APACHE
+[license-mit]: https://github.com/fnichol/libsh/blob/main/LICENSE-MIT
 [posix shell]:
   http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html
