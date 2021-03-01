@@ -1,16 +1,8 @@
 SH_TESTS := $(shell find tests -type f -name '*_test.sh')
 
 TEST_TOOLS += curl git tar
-MD5_CMD = md5sum
-SHASUM_CMD = sha256sum
 ifeq ($(shell uname -s),FreeBSD)
 TEST_TOOLS += gsed
-MD5_CMD = md5
-SHASUM_CMD = sha256
-endif
-ifeq ($(shell uname -s),Darwin)
-MD5_CMD = md5
-SHASUM_CMD = shasum -a 256
 endif
 
 include vendor/mk/base.mk
@@ -34,16 +26,14 @@ build/libsh.sh:
 	mkdir -p build
 	cp libsh.sh $@
 	version="$$(cat VERSION.txt)" \
-	commit_hash="$$(git show -s --format=%H "v$$version" | tail -n 1)" \
-	commit_date="$$(git show -s --format=%ad --date=short "v$$version" | tail -n 1)" \
+	commit_hash="$$(git show -s --format=%H)" \
+	commit_date="$$(git show -s --format=%ad --date=short)" \
 		&& sed -i.bak \
 			-e "s,@@version@@,$${version},g" \
 			-e "s,@@commit_hash@@,$${commit_hash},g" \
 			-e "s,@@commit_date@@,$${commit_date},g" $@ \
 		&& rm -f $@.bak
 	chmod 755 $@
-	cd build && $(MD5_CMD) $$(basename $@) > $$(basename $@).md5
-	cd build && $(SHASUM_CMD) $$(basename $@) > $$(basename $@).sha256
 
 update-install-vendor: ## Update the version of the inlined libsh in install.sh
 	@echo "--- $@"

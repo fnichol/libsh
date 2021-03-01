@@ -1,0 +1,8 @@
+darwin-x86_64	libsh.sh
+freebsd-x86_64	libsh.sh
+linux-aarch64	libsh.sh
+linux-arm	libsh.sh
+linux-i686	libsh.sh
+linux-x86_64	libsh.sh
+linuxgnu-i686	libsh.sh
+linuxgnu-x86_64	libsh.sh

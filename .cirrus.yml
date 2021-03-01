@@ -1,11 +1,20 @@
+---
 check_task:
+  name: check
+  only_if:
+    $CIRRUS_BRANCH !=~ ".*\.tmp" && $CIRRUS_BRANCH != $CIRRUS_DEFAULT_BRANCH
   container:
     image: fnichol/check-shell:latest
   check_script: make check
 
-task:
+test_task:
+  name: test-${PLATFORM}-${SHELL_BIN}
+  alias: tests
+  only_if:
+    $CIRRUS_BRANCH !=~ ".*\.tmp" && $CIRRUS_BRANCH != $CIRRUS_DEFAULT_BRANCH
   matrix:
     - env:
+        PLATFORM: linux
         matrix:
           - SHELL_BIN: apple-bash-23
           - SHELL_BIN: apple-bash-44
@@ -27,11 +36,11 @@ task:
           # - SHELL_BIN: zsh-3
           # - SHELL_BIN: zsh-4
           - SHELL_BIN: zsh-5
-      name: test_linux_$SHELL_BIN
       container:
-        dockerfile: .ci/Dockerfile.ci
+        dockerfile: .ci/Dockerfile.ci.test
       test_script: make test
     - env:
+        PLATFORM: macos
         matrix:
           - SHELL_BIN: bash-3
           - SHELL_BIN: bash-5
@@ -41,9 +50,8 @@ task:
           - SHELL_BIN: sh
           - SHELL_BIN: ksh
           - SHELL_BIN: zsh
-      name: test_macos_$SHELL_BIN
-      osx_instance:
-        image: mojave-base
+      macos_instance:
+        image: catalina-base
       setup_script: |
         if [ -n "${PKG:-}" ]; then brew install "$PKG"; fi
         if [ "$SHELL_BIN" = "bash-3" ]; then
@@ -54,6 +62,7 @@ task:
         fi
       test_script: make test
     - env:
+        PLATFORM: freebsd
         matrix:
           - SHELL_BIN: bash
             PKG: shells/bash
@@ -72,10 +81,100 @@ task:
           - SHELL_BIN: sh
           - SHELL_BIN: zsh
             PKG: shells/zsh
-      name: test_freebsd_$SHELL_BIN
       freebsd_instance:
-        image_family: freebsd-12-1-snap
+        image_family: freebsd-12-2
       setup_script: |
         pkg install --yes devel/git devel/gmake textproc/gsed
         if [ -n "${PKG:-}" ]; then pkg install --yes "$PKG"; fi
       test_script: gmake test
+
+build_lib_task:
+  name: build-lib-${VARIANT}
+  alias: build-libs
+  only_if:
+    $CIRRUS_TAG != '' || $CIRRUS_BRANCH == 'staging' || $CIRRUS_BRANCH ==
+    'trying'
+  depends_on:
+    - check
+    - tests
+  env:
+    matrix:
+      - VARIANT: libsh.sh
+  container:
+    dockerfile: .ci/Dockerfile.ci
+  build_script: make "build/$VARIANT"
+  checksums_script: cd build && ../.ci/build-checksums.sh "$VARIANT"
+  libraries_artifacts:
+    path: "build/$VARIANT"
+
+ci_success_task:
+  name: ci-success
+  depends_on:
+    - check
+    - tests
+    - build-libs
+  container:
+    dockerfile: .ci/Dockerfile.ci
+  clone_script: mkdir -p "$CIRRUS_WORKING_DIR"
+  success_script: /bin/true
+
+create_github_release_task:
+  name: create-github-release
+  only_if: $CIRRUS_TAG != ''
+  depends_on:
+    - build-libs
+  container:
+    dockerfile: .ci/Dockerfile.ci
+  env:
+    matrix:
+      - LIB: fnichol-cime
+    GITHUB_TOKEN: ENCRYPTED[7015be161905de99d7ba67dcd901f207c385a605e753f2b396728c00d114a3821061f9f05611682a57836610b0f7d38a]
+  create_github_release_script: |
+    if ! upload_url="$(
+      ./.ci/cirrus-release.sh gh_create_version_release \
+        "$CIRRUS_REPO_FULL_NAME" \
+        "$CIRRUS_TAG"
+    )"; then
+      echo "xxx Failed to create release" >&2
+      exit 1
+    fi
+    echo "$upload_url" > /tmp/upload_url
+  download_cirrus_artifacts_script: |
+    cr="$(readlink -f ./.ci/cirrus-release.sh)"
+    manifest="$(readlink -f ".ci/$LIB.manifest.txt")"
+    mkdir -p /tmp/release
+    cd /tmp/release
+    awk '{ print $2 }' "$manifest" | sort | uniq | while read -r a; do
+      "$cr" ci_download "build-lib-$a/libraries/build/$a"
+      "$cr" ci_download "build-lib-$a/libraries/build/$a.md5"
+      "$cr" ci_download "build-lib-$a/libraries/build/$a.sha256"
+    done
+    cp "$manifest" .
+    ls -l "$LIB"*
+  upload_github_release_artifacts_script: |
+    url="$(cat /tmp/upload_url)"
+    ./.ci/cirrus-release.sh gh_upload_all "$url" /tmp/release
+
+publish_github_release_task:
+  name: publish-github-release
+  only_if: $CIRRUS_TAG != ''
+  depends_on:
+    - create-github-release
+  container:
+    dockerfile: .ci/Dockerfile.ci
+  env:
+    GITHUB_TOKEN: ENCRYPTED[7015be161905de99d7ba67dcd901f207c385a605e753f2b396728c00d114a3821061f9f05611682a57836610b0f7d38a]
+  publish_release_script: |
+    ./.ci/cirrus-release.sh gh_publish_release \
+      "$CIRRUS_REPO_FULL_NAME" "$CIRRUS_TAG" CHANGELOG.md
+
+release_success_task:
+  name: release-success
+  only_if: $CIRRUS_TAG != ''
+  depends_on:
+    - create-github-release
+    - publish-github-release
+  container:
+    dockerfile: .ci/Dockerfile.ci
+  clone_script: mkdir -p "$CIRRUS_WORKING_DIR"
+  success_script: /bin/true
