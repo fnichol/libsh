@@ -88,24 +88,23 @@ test_task:
         if [ -n "${PKG:-}" ]; then pkg install --yes "$PKG"; fi
       test_script: gmake test
 
-build_lib_task:
-  name: build-lib-${VARIANT}
-  alias: build-libs
+build_libs_task:
+  name: build-libs
   only_if:
     $CIRRUS_TAG != '' || $CIRRUS_BRANCH == 'staging' || $CIRRUS_BRANCH ==
     'trying'
   depends_on:
     - check
     - tests
-  env:
-    matrix:
-      - VARIANT: libsh.sh
   container:
     dockerfile: .ci/Dockerfile.ci
-  build_script: make "build/$VARIANT"
-  checksums_script: cd build && ../.ci/build-checksums.sh "$VARIANT"
+  build_script: make build
+  checksums_script: |
+    cd build
+    distribs="$(ls *.sh)"
+    for d in $distribs; do ../.ci/build-checksums.sh "$d"; done
   libraries_artifacts:
-    path: "build/$VARIANT"
+    path: "build/*"
 
 ci_finished_task:
   name: ci-finished
@@ -126,8 +125,6 @@ create_github_release_task:
   container:
     dockerfile: .ci/Dockerfile.ci
   env:
-    matrix:
-      - LIB: fnichol-cime
     GITHUB_TOKEN: ENCRYPTED[7015be161905de99d7ba67dcd901f207c385a605e753f2b396728c00d114a3821061f9f05611682a57836610b0f7d38a]
   create_github_release_script: |
     if ! upload_url="$(
@@ -141,16 +138,20 @@ create_github_release_task:
     echo "$upload_url" > /tmp/upload_url
   download_cirrus_artifacts_script: |
     cr="$(readlink -f ./.ci/cirrus-release.sh)"
-    manifest="$(readlink -f ".ci/$LIB.manifest.txt")"
-    mkdir -p /tmp/release
-    cd /tmp/release
-    awk '{ print $2 }' "$manifest" | sort | uniq | while read -r a; do
-      "$cr" ci_download "build-lib-$a/libraries/build/$a"
-      "$cr" ci_download "build-lib-$a/libraries/build/$a.md5"
-      "$cr" ci_download "build-lib-$a/libraries/build/$a.sha256"
+    manifests="$(cd .ci && ls -1 *.manifest.txt)"
+    for m in $manifests; do
+      manifest="$(readlink -f ".ci/$m")"
+      mkdir -p /tmp/release
+      cd /tmp/release
+      awk '{ print $2 }' "$manifest" | sort | uniq | while read -r a; do
+        "$cr" ci_download "build-libs/libraries/build/$a"
+        "$cr" ci_download "build-libs/libraries/build/$a.md5"
+        "$cr" ci_download "build-libs/libraries/build/$a.sha256"
+      done
+      cp "$manifest" .
+      cd -
     done
-    cp "$manifest" .
-    ls -l "$LIB"*
+    ls -l /tmp/release/*
   upload_github_release_artifacts_script: |
     url="$(cat /tmp/upload_url)"
     ./.ci/cirrus-release.sh gh_upload_all "$url" /tmp/release

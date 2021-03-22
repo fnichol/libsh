@@ -1,0 +1,8 @@
+darwin-x86_64	libsh.full-minified.sh
+freebsd-x86_64	libsh.full-minified.sh
+linux-aarch64	libsh.full-minified.sh
+linux-arm	libsh.full-minified.sh
+linux-i686	libsh.full-minified.sh
+linux-x86_64	libsh.full-minified.sh
+linuxgnu-i686	libsh.full-minified.sh
+linuxgnu-x86_64	libsh.full-minified.sh
