@@ -5,9 +5,11 @@ CHECK_TOOLS += shellcheck shfmt
 
 test-shell: testtools dl-shunit2 ## Runs all shell code tests
 	@echo "--- $@"
-	for test in $(SH_TESTS); do \
+	@for test in $(SH_TESTS); do \
 		export SHELL_BIN=$(SHELL_BIN); \
-		echo; echo "Running: $$test"; $(SHELL_BIN) $$test; done
+		echo "  - Running: $$test (SHELL_BIN=$$SHELL_BIN)"; \
+		$(SHELL_BIN) $$test || exit $$?; \
+	done
 .PHONY: test-shell
 
 check-shell: shellcheck shfmt ## Checks linting & styling rules for shell code

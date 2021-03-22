@@ -1,0 +1,8 @@
+darwin-x86_64	libsh.minimal.sh
+freebsd-x86_64	libsh.minimal.sh
+linux-aarch64	libsh.minimal.sh
+linux-arm	libsh.minimal.sh
+linux-i686	libsh.minimal.sh
+linux-x86_64	libsh.minimal.sh
+linuxgnu-i686	libsh.minimal.sh
+linuxgnu-x86_64	libsh.minimal.sh

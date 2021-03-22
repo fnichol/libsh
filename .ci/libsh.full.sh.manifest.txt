@@ -1,0 +1,8 @@
+darwin-x86_64	libsh.full.sh
+freebsd-x86_64	libsh.full.sh
+linux-aarch64	libsh.full.sh
+linux-arm	libsh.full.sh
+linux-i686	libsh.full.sh
+linux-x86_64	libsh.full.sh
+linuxgnu-i686	libsh.full.sh
+linuxgnu-x86_64	libsh.full.sh
