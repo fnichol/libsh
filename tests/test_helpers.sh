@@ -141,7 +141,8 @@ run() {
 }
 
 __setup_sh_script() {
-  cat "$libsh_src" >"$sh_script"
+  cat "${SRC:?SRC not set}" >"$sh_script"
+  cat "${0%/*}/../lib/_ksh_local.sh" >>"$sh_script"
   echo >>"$sh_script"
 }
 
@@ -238,8 +239,6 @@ shell_compat() {
     SHUNIT_PARENT="$1"
   fi
 }
-
-libsh_src="${0%/*}/../libsh.sh"
 
 # shellcheck disable=SC2034
 shunit2="${0%/*}/../tmp/shunit2/shunit2"
