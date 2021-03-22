@@ -5,6 +5,9 @@ ifeq ($(shell uname -s),FreeBSD)
 TEST_TOOLS += gsed
 endif
 
+NAME := libsh
+REPO := https://github.com/fnichol/libsh
+
 include vendor/mk/base.mk
 include vendor/mk/shell.mk
 include vendor/mk/release.mk
