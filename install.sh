@@ -80,7 +80,7 @@ main() {
   setup_traps trap_cleanup_files
 
   if [ "$release" = "latest" ]; then
-    release="$(latest_release)"
+    release="$(latest_release fnichol/libsh)"
   fi
 
   case "$mode" in
@@ -321,34 +321,23 @@ is_mode_valid() {
 }
 
 latest_release() {
+  local gh_repo
+  gh_repo="$1"
+
   need_cmd awk
-  need_cmd git
 
-  {
-    # The `--sort` option on `git ls-remote` was introduced in Git 2.18.0, so
-    # if it's older then we'll have to use GNU/sort's `--version-sort` to help.
-    # Oi
-    local version
-    version="$(git --version | awk '{ print $NF }')"
-    if version_ge "$version" 2 18; then
-      git ls-remote --tags --sort=version:refname \
-        https://github.com/fnichol/libsh.git
-    else
-      need_cmd sort
+  local tmpfile
+  tmpfile="$(mktemp_file)"
+  cleanup_file "$tmpfile"
 
-      git ls-remote --tags https://github.com/fnichol/libsh.git \
-        | sort --field-separator='/' --key=3 --version-sort
-    fi
-  } | awk -F/ '
-        ($NF ~ /^v[0-9]+\./ && $NF !~ /\^\{\}$/) {
-          last = $NF
-        }
-
-        END {
-          sub(/^v/, "", last)
-          print last
-        }
-      '
+  download \
+    "https://api.github.com/repos/$gh_repo/releases/latest" \
+    "$tmpfile" \
+    >/dev/null
+  awk '
+    BEGIN { FS="\""; RS="," }
+    $2 == "tag_name" { sub(/^v/, "", $4); print $4 }
+  ' "$tmpfile"
 }
 
 vendor_libsh() {
