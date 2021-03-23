@@ -65,7 +65,7 @@ main() {
 
   local program version author
   program="install.sh"
-  version="0.1.0"
+  version="0.2.0"
   author="Fletcher Nichol <fnichol@nichol.ca>"
 
   # Parse CLI arguments and set local variables
