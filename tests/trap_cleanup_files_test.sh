@@ -6,7 +6,7 @@
 
 . "${0%/*}/../lib/_ksh_local.sh"
 
-. "${SRC:-lib/trap_cleanup_files.sh}"
+. "${SRC:=lib/trap_cleanup_files.sh}"
 
 oneTimeSetUp() {
   commonOneTimeSetUp

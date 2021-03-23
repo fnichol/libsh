@@ -6,7 +6,7 @@
 
 . "${0%/*}/../lib/_ksh_local.sh"
 
-. "${SRC:-lib/warn.sh}"
+. "${SRC:=lib/warn.sh}"
 
 oneTimeSetUp() {
   commonOneTimeSetUp
