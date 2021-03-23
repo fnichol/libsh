@@ -1,5 +1,6 @@
-BUMP_MODE ?= minor
+BUMP_MODE ?=
 BUMP_PRE ?=
+BUMP_SET ?=
 
 ifndef NAME
 $(error NAME is not set in Makefile and is required in release.mk)
@@ -25,15 +26,19 @@ release-prepare: clean prepush release-bump-version release-update-changelog \
 	@echo ""
 .PHONY: release-prepare
 
-release-bump-version: ## Set a new version for the project. (default: BUMP_MODE=minor)
+release-bump-version: ## Set a new version for the project.
 	@echo "--- $@"
-	@echo "  - Bumping version $(BUMP_MODE)"
-	mkdir -p tmp
-	cp VERSION.txt tmp/LAST_VERSION.txt
-	if [ -n "$(BUMP_PRE)" ]; then \
+	@echo "  - Bumping version"
+	@mkdir -p tmp
+	@cp VERSION.txt tmp/LAST_VERSION.txt
+	@if [ -n "$(BUMP_SET)" ]; then \
+		echo "$(BUMP_SET)" >VERSION.txt; \
+	elif [ -n "$(BUMP_MODE)" ] && [ -n "$(BUMP_PRE)" ]; then \
 		versio bump file $(BUMP_MODE) --pre-release $(BUMP_PRE); \
-	else \
+	elif [ -n "$(BUMP_MODE)" ]; then \
 		versio bump file $(BUMP_MODE); \
+	else \
+		versio bump file set --no-pre-release; \
 	fi
 	@echo "    VERSION.txt now set to: $$(cat VERSION.txt)"
 .PHONY: release-bump-version
@@ -41,9 +46,9 @@ release-bump-version: ## Set a new version for the project. (default: BUMP_MODE=
 release-bump-version-dev:
 	@echo "--- $@"
 	@echo "  - Bumping version for next iteration"
-	mkdir -p tmp
-	cp VERSION.txt tmp/LAST_VERSION.txt
-	if grep -q -E '^\d+\.\d+.\d+-.+' tmp/LAST_VERSION.txt; then \
+	@mkdir -p tmp
+	@cp VERSION.txt tmp/LAST_VERSION.txt
+	@if grep -q -E '^\d+\.\d+.\d+-.+' tmp/LAST_VERSION.txt; then \
 		versio bump file set --pre-release dev; \
 	else \
 		versio bump file minor --pre-release dev; \
@@ -77,8 +82,8 @@ release-push-head:
 
 release-tag: ## Create a new release Git tag
 	@echo "--- $@"
-	@version="$$(cat VERSION.txt)" && git tag --annotate "v$$version" \
-		--message "release: $(NAME) $$version"
+	version="$$(cat VERSION.txt)" && git tag \
+		--annotate "v$$version" --message "release: $(NAME) $$version"
 .PHONY: release-tag
 
 release-update-changelog:
