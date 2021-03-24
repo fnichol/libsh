@@ -22,29 +22,36 @@ print_usage() {
         -V, --version   Prints version information
 
     OPTIONS:
-        -m, --mode=<MODE>       Install mode
-                                [values: vendor, insert]
-                                [default: vendor]
-        -r, --release=<RELEASE> Release version
-                                [examples: latest, 1.2.3, main]
-                                [default: latest]
-        -t, --target=<TARGET>   Target directory or file for installation
-                                [examples: /tmp/libsh.sh, file.txt]
-                                [default: ./vendor/lib/libsh.sh]
+        -d, --distribution=<DISTRIB>  Distribution format
+                                      [values: full, full-minified,
+                                      minimal, minimal-minified]
+                                      [default: full]
+        -m, --mode=<MODE>             Install mode
+                                      [values: vendor, insert]
+                                      [default: vendor]
+        -r, --release=<RELEASE>       Release version
+                                      [examples: latest, 1.2.3, main]
+                                      [default: latest]
+        -t, --target=<TARGET>         Target directory or file for installation
+                                      [examples: /tmp/libsh.sh, file.txt]
+                                      [default: ./vendor/lib/libsh.<DISTRIB>.sh]
 
     EXAMPLES:
-        # Vendor the latest release into ./vendor/lib/libsh.sh
+        # Vendor the latest full release into ./vendor/lib/libsh.sh
         $program
 
-        # Vendor a specific release into /tmp/libsh-0.0.1.sh
-        $program --release=0.0.1 --target=/tmp/libsh-0.0.1.sh
+        # Vendor a specific minimal release into /tmp/libsh-0.0.1.sh
+        $program --release=0.0.1 --distribution=minimal \\
+            --target=/tmp/libsh-0.0.1.sh
 
-        # Insert the latest release into myprog.sh at a line:
+        # Insert the latest full release into myprog.sh at a line:
         # \`# INSERT: libsh.sh\`
         $program --mode=insert --target=myprog.sh
 
-        # Update the inserted version with a specific release in cli.sh:
-        $program --mode=insert --release=0.0.1 --target=cli.sh
+        # Update the inserted version with a specific minimal/minified
+        # release in cli.sh:
+        $program --mode=insert --release=0.0.1 \\
+            --distribution=minimal-minified --target=cli.sh
 
     AUTHOR:
         $author
@@ -58,29 +65,30 @@ main() {
 
   local program version author
   program="install.sh"
-  version="0.1.0"
+  version="0.2.0"
   author="Fletcher Nichol <fnichol@nichol.ca>"
 
   # Parse CLI arguments and set local variables
   parse_cli_args "$program" "$version" "$author" "$@"
-  local mode release target
+  local distrib mode release target
+  distrib="$DISTRIB"
   mode="$MODE"
   release="$RELEASE"
   target="$TARGET"
-  unset MODE RELEASE TARGET
+  unset DISTRIB MODE RELEASE TARGET
 
   setup_traps trap_cleanup_files
 
   if [ "$release" = "latest" ]; then
-    release="$(latest_release)"
+    release="$(latest_release fnichol/libsh)"
   fi
 
   case "$mode" in
     insert)
-      insert_libsh "$release" "$target"
+      insert_libsh "$release" "$distrib" "$target"
       ;;
     vendor)
-      vendor_libsh "$release" "$target"
+      vendor_libsh "$release" "$distrib" "$target"
       ;;
     *)
       die "invalid mode value; mode=$mode"
@@ -97,16 +105,25 @@ parse_cli_args() {
   author="$1"
   shift
 
+  DISTRIB="full"
   MODE="vendor"
   RELEASE="latest"
-  TARGET="./vendor/lib/libsh.sh"
+  TARGET=
 
   OPTIND=1
-  while getopts "hm:r:t:V-:" arg; do
+  while getopts "hd:m:r:t:V-:" arg; do
     case "$arg" in
       h)
         print_usage "$program" "$version" "$author"
         exit 0
+        ;;
+      d)
+        if is_distrib_valid "$OPTARG"; then
+          DISTRIB="$OPTARG"
+        else
+          print_usage "$program" "$version" "$author" >&2
+          die "invalid distribution name $OPTARG"
+        fi
         ;;
       m)
         if is_mode_valid "$OPTARG"; then
@@ -129,6 +146,18 @@ parse_cli_args() {
       -)
         long_optarg="${OPTARG#*=}"
         case "$OPTARG" in
+          distribution=?*)
+            if is_distrib_valid "$long_optarg"; then
+              DISTRIB="$long_optarg"
+            else
+              print_usage "$program" "$version" "$author" >&2
+              die "invalid distribution name '$long_optarg'"
+            fi
+            ;;
+          distribution*)
+            print_usage "$program" "$version" "$author" >&2
+            die "missing required argument for --$OPTARG option"
+            ;;
           help)
             print_usage "$program" "$version" "$author"
             exit 0
@@ -180,22 +209,29 @@ parse_cli_args() {
     esac
   done
   shift "$((OPTIND - 1))"
+
+  if [ -z "$TARGET" ]; then
+    TARGET="./vendor/lib/libsh.${DISTRIB}.sh"
+  fi
 }
 
 download_libsh() {
-  local release target
+  local release distrib target repo
   release="$1"
-  target="$2"
+  distrib="$2"
+  target="$3"
+  repo="https://github.com/fnichol/libsh"
 
   download \
-    "https://github.com/fnichol/libsh/releases/download/v${release}/libsh.sh" \
+    "$repo/releases/download/v${release}/libsh.${distrib}.sh" \
     "$target"
 }
 
 insert_libsh() {
-  local release target
+  local release distrib target
   release="$1"
-  target="$2"
+  distrib="$2"
+  target="$3"
 
   need_cmd awk
   need_cmd cat
@@ -206,9 +242,9 @@ insert_libsh() {
   rendered="$(mktemp_file)"
   cleanup_file "$rendered"
 
-  section "Inserting libsh.sh '$release' into $target"
+  section "Inserting libsh.sh '$release' ($distrib) into $target"
 
-  download_libsh "$release" "$libsh"
+  download_libsh "$release" "$distrib" "$libsh"
 
   info "Inlining libsh into $target"
   awk -v libsh="$libsh" '
@@ -256,6 +292,20 @@ insert_libsh() {
   cat "$rendered" >"$target"
 }
 
+is_distrib_valid() {
+  local distrib
+  distrib="$1"
+
+  case "$distrib" in
+    full | full-minified | minimal | minimal-minified)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 is_mode_valid() {
   local mode
   mode="$1"
@@ -271,40 +321,30 @@ is_mode_valid() {
 }
 
 latest_release() {
+  local gh_repo
+  gh_repo="$1"
+
   need_cmd awk
-  need_cmd git
 
-  {
-    # The `--sort` option on `git ls-remote` was introduced in Git 2.18.0, so
-    # if it's older then we'll have to use GNU/sort's `--version-sort` to help.
-    # Oi
-    local version
-    version="$(git --version | awk '{ print $NF }')"
-    if version_ge "$version" 2 18; then
-      git ls-remote --tags --sort=version:refname \
-        https://github.com/fnichol/libsh.git
-    else
-      need_cmd sort
+  local tmpfile
+  tmpfile="$(mktemp_file)"
+  cleanup_file "$tmpfile"
 
-      git ls-remote --tags https://github.com/fnichol/libsh.git \
-        | sort --field-separator='/' --key=3 --version-sort
-    fi
-  } | awk -F/ '
-        ($NF ~ /^v[0-9]+\./ && $NF !~ /\^\{\}$/) {
-          last = $NF
-        }
-
-        END {
-          sub(/^v/, "", last)
-          print last
-        }
-      '
+  download \
+    "https://api.github.com/repos/$gh_repo/releases/latest" \
+    "$tmpfile" \
+    >/dev/null
+  awk '
+    BEGIN { FS="\""; RS="," }
+    $2 == "tag_name" { sub(/^v/, "", $4); print $4 }
+  ' "$tmpfile"
 }
 
 vendor_libsh() {
-  local release target
+  local release distrib target
   release="$1"
-  target="$2"
+  distrib="$2"
+  target="$3"
 
   need_cmd cat
   need_cmd touch
@@ -315,9 +355,9 @@ vendor_libsh() {
   tmpfile="$(mktemp_file)"
   cleanup_file "$tmpfile"
 
-  section "Vendoring libsh.sh '$release' to $target"
+  section "Vendoring libsh.sh '$release' ($distrib) to $target"
 
-  download_libsh "$release" "$tmpfile"
+  download_libsh "$release" "$distrib" "$tmpfile"
 
   info "Copying libsh to $target"
   mkdir -p "$(dirname "$target")"
