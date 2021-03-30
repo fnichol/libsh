@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-# shellcheck disable=SC2039
 
 # Prints an error message to standard error and exits with a non-zero exit
 # code.
