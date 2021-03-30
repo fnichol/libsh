@@ -51,7 +51,7 @@ release-bump-version-dev:
 	@if grep -q -E '^\d+\.\d+.\d+-.+' tmp/LAST_VERSION.txt; then \
 		versio bump file set --pre-release dev; \
 	else \
-		versio bump file minor --pre-release dev; \
+		versio bump file patch --pre-release dev; \
 	fi
 	@echo "    VERSION.txt now set to: $$(cat VERSION.txt)"
 .PHONY: release-bump-version-dev
