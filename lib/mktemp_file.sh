@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-# shellcheck disable=SC2039
 
 . "lib/need_cmd.sh"
 

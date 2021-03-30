@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-# shellcheck disable=SC2039
 
 # Prints a section-delimiting header to standard out.
 #

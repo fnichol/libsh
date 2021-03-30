@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-# shellcheck disable=SC2039
 
 # Determines whether or not a program is available on the system PATH.
 #

@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-# shellcheck disable=SC2039
 
 . "lib/check_cmd.sh"
 . "lib/die.sh"

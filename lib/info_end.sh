@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-# shellcheck disable=SC2039
 
 # Completes printing an informational, detailed step to standard out which has
 # no output, started with `info_start`

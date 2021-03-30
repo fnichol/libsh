@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-# shellcheck disable=SC2039
 
 if [ -n "${KSH_VERSION:-}" ]; then
   # Evil, nasty, wicked hack to ignore calls to `local <var>`, on the strict

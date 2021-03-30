@@ -43,9 +43,9 @@ download() {
     _orig_flags="$-"
     set +e
     curl -sSfL "$_url" -o "$_dst"
-    code="$?"
+    _code="$?"
     set "-$(echo "$_orig_flags" | sed s/s//g)"
-    if [ $code -eq 0 ]; then
+    if [ $_code -eq 0 ]; then
       unset _url _dst _code _orig_flags
       return 0
     else
