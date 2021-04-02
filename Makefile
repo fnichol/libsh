@@ -18,7 +18,7 @@ distribs_builds = $(patsubst %,build/libsh.%.sh,$(distribs)) \
 distribs_tests = $(patsubst %,test-libsh.%.sh,$(distribs)) \
 	$(patsubst %,test-libsh.%-minified.sh,$(distribs))
 
-build: $(distribs_builds) build/libsh.sh ## Builds the sources
+build: $(distribs_builds) build/libsh.sh build/install.sh ## Builds the sources
 .PHONY: build
 
 test: test-shell $(distribs_tests)## Runs all tests
@@ -44,6 +44,11 @@ build/libsh.sh: build/libsh.full.sh
 	@echo "--- $@"
 	cp $< $@
 
+build/install.sh: contrib/install.sh build/libsh.full-minified.sh
+	@echo "--- $@"
+	awk -f support/compile-install.awk $< $(word 2,$^) > $@
+	chmod 755 $@
+
 test-libsh.%-minified.sh: build/libsh.%-minified.sh
 	@echo "--- $@"
 	@tests=$$(awk -f support/sources.awk distrib/libsh.$*.sh | awk '{ \
@@ -67,16 +72,3 @@ test-libsh.%.sh: build/libsh.%.sh
 		echo "  - Running $$test (SHELL_BIN=$$SHELL_BIN, SRC=$$SRC)"; \
 		$(SHELL_BIN) $$test || exit $$?; \
 	done
-
-update-install-vendor: ## Update the version of the inlined libsh in install.sh
-	@echo "--- $@"
-	@{ \
-	set -eu; \
-	. libsh.sh; \
-	setup_traps trap_cleanup_files; \
-	install_copy="$$(mktemp_file)"; \
-	cleanup_file "$$install_copy"; \
-	cp -p install.sh "$$install_copy"; \
-	"$$install_copy" --mode=insert --target=install.sh; \
-	}
-.PHONY: update-install-vendor
