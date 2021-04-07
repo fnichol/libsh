@@ -20,8 +20,8 @@
 #
 # # Notes
 #
-# At least one of `curl`, `wget`, or `ftp must be compiled with SSL/TLS support
-# to be able to download from `https` sources.
+# At least one of `curl`, `wget`, or `ftp` must be compiled with SSL/TLS
+# support to be able to download from `https` sources.
 #
 # # Examples
 #

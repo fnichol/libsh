@@ -16,7 +16,7 @@
 # Basic usage:
 #
 # ```sh
-# info_start "Copying file"
+# info_end
 # ```
 info_end() {
   case "${TERM:-}" in

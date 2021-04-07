@@ -11,7 +11,7 @@
 # All tested invocations will create a file in each platform's suitable
 # temporary directory.
 #
-# * `@param [optional, String] parent directory
+# * `@param [optional, String]` parent directory
 # * `@stdout` path to temporary directory
 # * `@return 0` if successful
 #
@@ -27,7 +27,7 @@
 # With a custom parent directory:
 #
 # ```sh
-# dir="$(mktemp_directory $HOME)"
+# dir="$(mktemp_directory "$HOME")"
 # # use directory
 # ```
 

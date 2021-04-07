@@ -32,17 +32,17 @@
 # and long Git SHA refs to signal that the implementation may not perfectly
 # correspond to a SHA commit.
 #
-# * `@param [String] program name
-# * `@param [String] version string
-# * `@param [optional, String] verbose mode set if value if `"true"`
-# * `@param [optional, String] short Git SHA
-# * `@param [optional, String] long Git SHA
-# * `@param [optional, String] commit/version date
+# * `@param [String]` program name
+# * `@param [String]` version string
+# * `@param [optional, String]` verbose mode set if value if `"true"`
+# * `@param [optional, String]` short Git SHA
+# * `@param [optional, String]` long Git SHA
+# * `@param [optional, String]` commit/version date
 # * `@stdout` version information
 # * `@return 0` if successful
 #
-# Note that the implementation for this function was inspired by Rust's `cargo
-# version`, see: https://git.io/fjsOh
+# Note that the implementation for this function was inspired by Rust's [`cargo
+# version`](https://git.io/fjsOh).
 #
 # # Examples
 #
