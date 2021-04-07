@@ -6,7 +6,7 @@
 # Prints an error message and exits with a non-zero code if the program is not
 # available on the system PATH.
 #
-# * `@param [String] program name
+# * `@param [String]` program name
 # * `@stderr` a warning message is printed if program cannot be found
 #
 # # Environment Variables
@@ -20,7 +20,7 @@
 #
 # # Examples
 #
-# Basic usage, when used as a guard or pre-requisite in a function:
+# Basic usage, when used as a guard or prerequisite in a function:
 #
 # ```sh
 # need_cmd git
