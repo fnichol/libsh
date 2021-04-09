@@ -16,7 +16,7 @@ setUp() {
   commonSetUp
 }
 
-testPrintVersionDefault() {
+testPrintVersionDefaultWithGit() {
   createGitRepo repo
   run print_version "cool" "1.2.3"
 
@@ -24,7 +24,7 @@ testPrintVersionDefault() {
   assertStderrNull
 }
 
-testPrintVersionVerbose() {
+testPrintVersionVerboseWithGit() {
   createGitRepo repo
   run print_version "cool" "1.2.3" "true"
 
@@ -35,7 +35,7 @@ commit-date: 2000-01-02"
   assertStderrNull
 }
 
-testPrintVersionExplicitNonverbose() {
+testPrintVersionExplicitNonverboseWithGit() {
   createGitRepo repo
   run print_version "cool" "1.2.3" "" # setting non-verbose with empty arg
 
@@ -43,7 +43,7 @@ testPrintVersionExplicitNonverbose() {
   assertStderrNull
 }
 
-testPrintVersionNoGitRepo() {
+testPrintVersionNoGitRepoWithGit() {
   local dir
   dir="$tmppath/testPrintVersionNoGitRepo"
   rm -f "$dir"
@@ -59,7 +59,7 @@ testPrintVersionNoGitRepo() {
   unset dir
 }
 
-testPrintVersionDirty() {
+testPrintVersionDirtyWithGit() {
   createGitRepo repo
   echo 'Uh oh' >README.md
   run print_version "cool" "1.2.3"
@@ -68,7 +68,7 @@ testPrintVersionDirty() {
   assertStderrNull
 }
 
-testPrintVersionDirtyVerbose() {
+testPrintVersionDirtyVerboseWithGit() {
   createGitRepo repo
   echo 'Uh oh' >README.md
   run print_version "cool" "1.2.3" "true"
@@ -96,7 +96,7 @@ testPrintVersionNoGit() {
   assertStderrNull
 }
 
-testPrintVersionNoGitVerbose() {
+testPrintVersionVerboseNoGit() {
   createGitRepo repo
   # Save full path to `grep`
   GREP="$(command -v grep)"
@@ -110,6 +110,64 @@ testPrintVersionNoGitVerbose() {
 
   assertStdoutEquals "cool 1.2.3
 release: 1.2.3"
+  assertStderrNull
+}
+
+testPrintVersionNoGitWithShaAndDate() {
+  createGitRepo repo
+  # Save full path to `grep`
+  GREP="$(command -v grep)"
+  export GREP
+  # Temporarily clear PATH so the `git` program cannot be found
+  export PATH=""
+  run print_version "cool" "1.2.3" \
+    "false" "abcshort" "abclong" "2000-01-02"
+  # Restore PATH and unset GREP
+  export PATH="$__ORIG_PATH"
+  unset GREP
+
+  assertStdoutEquals "cool 1.2.3 (abcshort 2000-01-02)"
+  assertStderrNull
+}
+
+testPrintVersionVerboseNoGitWithShaAndDate() {
+  createGitRepo repo
+  # Save full path to `grep`
+  GREP="$(command -v grep)"
+  export GREP
+  # Temporarily clear PATH so the `git` program cannot be found
+  export PATH=""
+  run print_version "cool" "1.2.3" \
+    "true" "abcshort" "abclong" "2000-01-02"
+  # Restore PATH and unset GREP
+  export PATH="$__ORIG_PATH"
+  unset GREP
+
+  assertStdoutEquals "cool 1.2.3 (abcshort 2000-01-02)
+release: 1.2.3
+commit-hash: abclong
+commit-date: 2000-01-02"
+  assertStderrNull
+}
+
+testPrintVersionWithGitAndShaAndDate() {
+  createGitRepo repo
+  run print_version "cool" "1.2.3" \
+    "false" "abcshort" "abclong" "2000-01-02"
+
+  assertStdoutEquals "cool 1.2.3 (abcshort 2000-01-02)"
+  assertStderrNull
+}
+
+testPrintVersionVerboseWithGiAndShaAndDate() {
+  createGitRepo repo
+  run print_version "cool" "1.2.3" \
+    "true" "abcshort" "abclong" "2000-01-02"
+
+  assertStdoutEquals "cool 1.2.3 (abcshort 2000-01-02)
+release: 1.2.3
+commit-hash: abclong
+commit-date: 2000-01-02"
   assertStderrNull
 }
 

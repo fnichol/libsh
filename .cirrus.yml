@@ -169,12 +169,27 @@ publish_github_release_task:
     ./.ci/cirrus-release.sh gh_publish_release \
       "$CIRRUS_REPO_FULL_NAME" "$CIRRUS_TAG" CHANGELOG.md
 
+publish_install_sh_task:
+  name: publish-install-sh
+  only_if: $CIRRUS_TAG != ''
+  depends_on:
+    - publish-github-release
+  container:
+    dockerfile: .ci/Dockerfile.ci
+  env:
+    GITHUB_TOKEN: ENCRYPTED[7015be161905de99d7ba67dcd901f207c385a605e753f2b396728c00d114a3821061f9f05611682a57836610b0f7d38a]
+  publish_install_sh_script: |
+    ./.ci/cirrus-release.sh gh_download \
+      "$CIRRUS_REPO_FULL_NAME" "$CIRRUS_TAG" install.sh
+    ./.ci/update-gh-pages-install.sh install.sh
+
 release_finished_task:
   name: release-finished
   only_if: $CIRRUS_TAG != ''
   depends_on:
     - create-github-release
     - publish-github-release
+    - publish-install-sh
   container:
     dockerfile: .ci/Dockerfile.ci
   clone_script: mkdir -p "$CIRRUS_WORKING_DIR"

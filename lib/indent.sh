@@ -11,11 +11,12 @@
 # addressable in an easy way. This implementation uses a temp file to ferry the
 # original command's exit code from a subshell back into the main function. The
 # output can be aligned with a pipe to `sed` as before but now we have an
-# implementation which mimicks a `set -o pipefail` which should work on all
+# implementation which mimics a `set -o pipefail` which should work on all
 # Bourne shells. Note that the `set -o errexit` is disabled during the
 # command's invocation so that its exit code can be captured.
 #
-# Based on implementation from: https://stackoverflow.com/a/54931544
+# Based on implementation from [Stack
+# Overflow](https://stackoverflow.com/a/54931544)
 #
 # * `@param [String[]]` command and arguments
 # * `@return` the exit code of the command which was executed

@@ -2,7 +2,7 @@
 
 # Determines whether or not a program is available on the system PATH.
 #
-# * `@param [String] program name
+# * `@param [String]` program name
 # * `@return 0` if program is found on system PATH
 # * `@return 1` if program is not found
 #
@@ -18,6 +18,7 @@
 # if check_cmd git; then
 #   echo "Found Git"
 # fi
+# ```
 check_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
     return 1
