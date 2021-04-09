@@ -1,0 +1,8 @@
+darwin-x86_64	install.sh
+freebsd-x86_64	install.sh
+linux-aarch64	install.sh
+linux-arm	install.sh
+linux-i686	install.sh
+linux-x86_64	install.sh
+linuxgnu-i686	install.sh
+linuxgnu-x86_64	install.sh

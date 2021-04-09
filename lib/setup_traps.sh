@@ -7,7 +7,8 @@
 # are also covered.
 #
 # This implementation was based on a very nice, portable signal handling thread
-# thanks to: https://unix.stackexchange.com/a/240736
+# thanks to an implementation on
+# [Stack Overflow](https://unix.stackexchange.com/a/240736).
 #
 # * `@param [String]` name of function to run with traps
 #
