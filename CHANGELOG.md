@@ -4,6 +4,18 @@
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+- add an API page, fully documenting all functions in one place
+- complete sections in Readme
+- add optional support for provided Git info in `print_version` function
+- add `install.sh` support for installing distributions
+- release a new `install.sh` script on each release
+
+### Fixed
+
+- update errant local variable `code` in `download` function
+
 ## [0.7.0] - 2021-03-23
 
 ### Added
@@ -79,7 +91,6 @@
 <!-- next-url -->
 
 [unreleased]: https://github.com/fnichol/libsh/compare/v0.7.0...HEAD
-
 [0.7.0]: https://github.com/fnichol/libsh/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/fnichol/libsh/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/fnichol/libsh/compare/v0.4.0...v0.5.0
