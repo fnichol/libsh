@@ -63,13 +63,16 @@ main() {
   if [ -n "${DEBUG:-}" ]; then set -v; fi
   if [ -n "${TRACE:-}" ]; then set -xv; fi
 
-  local program version author
+  local program version author sha sha_long date
   program="install.sh"
-  version="0.2.0"
+  version="0.8.0"
   author="Fletcher Nichol <fnichol@nichol.ca>"
+  sha="0daf997"
+  sha_long="0daf997ec5026389d31461dd19f1d21082be737e"
+  date="2021-04-11"
 
   # Parse CLI arguments and set local variables
-  parse_cli_args "$program" "$version" "$author" "$@"
+  parse_cli_args "$program" "$version" "$author" "$sha" "$sha_long" "$date" "$@"
   local distrib mode release target
   distrib="$DISTRIB"
   mode="$MODE"
@@ -97,12 +100,18 @@ main() {
 }
 
 parse_cli_args() {
-  local program version author mode release target
+  local program version author sha sha_long date mode release target
   program="$1"
   shift
   version="$1"
   shift
   author="$1"
+  shift
+  sha="$1"
+  shift
+  sha_long="$1"
+  shift
+  date="$1"
   shift
 
   DISTRIB="full"
@@ -140,7 +149,7 @@ parse_cli_args() {
         TARGET="$OPTARG"
         ;;
       V)
-        print_version "$program" "$version"
+        print_version "$program" "$version" "true" "$sha" "$sha_long" "$date"
         exit 0
         ;;
       -)
@@ -189,7 +198,8 @@ parse_cli_args() {
             die "missing required argument for --$OPTARG option"
             ;;
           version)
-            print_version "$program" "$version" "true"
+            print_version "$program" "$version" "true" \
+              "$sha" "$sha_long" "$date"
             exit 0
             ;;
           '')
@@ -392,228 +402,190 @@ version_ge() {
 # --------
 # project: https://github.com/fnichol/libsh
 # author: Fletcher Nichol <fnichol@nichol.ca>
-# version: 0.6.0
-# commit-hash: 5edc6607db5e8389d6ccde45a431dfca3d37cbe9
-# commit-date: 2020-12-30
-# source: https://github.com/fnichol/libsh/tree/v0.6.0
-# archive: https://github.com/fnichol/libsh/archive/v0.6.0.tar.gz
+# version: 0.8.0
+# distribution: libsh.full-minified.sh
+# commit-hash: 0daf997ec5026389d31461dd19f1d21082be737e
+# commit-date: 2021-04-11
+# artifact: https://github.com/fnichol/libsh/releases/download/v0.8.0/libsh.full.sh
+# source: https://github.com/fnichol/libsh/tree/v0.8.0
+# archive: https://github.com/fnichol/libsh/archive/v0.8.0.tar.gz
 #
-
 if [ -n "${KSH_VERSION:-}" ]; then
-  # Evil, nasty, wicked hack to ignore calls to `local <var>`, on the strict
-  # assumption that no initialization will take place, i.e. `local
-  # <var>=<value>`. If this assumption holds, this implementation fakes a
-  # `local` keyword for ksh. The `eval` is used as some versions of dash will
-  # error with "Syntax error: Bad function name" whether or not it's in a
-  # conditional (likely in the parser/ast phase) (src:
-  # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=619786). Also, `shfmt`
-  # does *not* like a function called `local` so...another dodge here. TBD on
-  # this one, folks...
   eval "local() { return 0; }"
 fi
-
-# Determines whether or not a program is available on the system PATH.
-#
-# * `@param [String] program name
-# * `@return 0` if program is found on system PATH
-# * `@return 1` if program is not found
-#
-# # Environment Variables
-#
-# * `PATH` indirectly used to search for the program
-#
-# # Examples
-#
-# Basic usage, when used as a conditional check:
-#
-# ```sh
-# if check_cmd git; then
-#   echo "Found Git"
-# fi
-check_cmd() {
-  local _cmd
-  _cmd="$1"
-
-  if ! command -v "$_cmd" >/dev/null 2>&1; then
-    unset _cmd
-    return 1
+# shellcheck disable=SC2120
+mktemp_directory() {
+  need_cmd mktemp
+  if [ -n "${1:-}" ]; then
+    mktemp -d "$1/tmp.XXXXXX"
   else
-    unset _cmd
-    return 0
+    mktemp -d 2>/dev/null || mktemp -d -t tmp
   fi
 }
-
-# Tracks a directory for later cleanup in a trap handler.
-#
-# This function can be called immediately after a temp directory is created,
-# before a directory is created, or long after a directory exists. When used in
-# combination with [`trap_cleanup_directories`], all directories registered by
-# calling `cleanup_directory` will be removed if they exist when
-# `trap_cleanup_directories` is invoked.
-#
-# * `@param [String]` path to directory
-# * `@return 0` if successful
-# * `@return 1` if a temp file could not be created
-#
-# [`trap_cleanup_directories`]: #function.trap_cleanup_directories
-#
-# # Global Variables
-#
-# * `__CLEANUP_DIRECTORIES__` used to track the collection of directories to
-#   clean up whose value is a file. If not declared or set, this function will
-#   set it up.
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# dir="$(mktemp_directory)"
-# cleanup_directory "$dir"
-# # do work on directory, etc.
-# ```
+# shellcheck disable=SC2120
+mktemp_file() {
+  need_cmd mktemp
+  if [ -n "${1:-}" ]; then
+    mktemp "$1/tmp.XXXXXX"
+  else
+    mktemp 2>/dev/null || mktemp -t tmp
+  fi
+}
+need_cmd() {
+  if ! check_cmd "$1"; then
+    die "Required command '$1' not found on PATH"
+  fi
+}
+print_version() {
+  local _program _version _verbose _sha _long_sha _date
+  _program="$1"
+  _version="$2"
+  _verbose="${3:-false}"
+  _sha="${4:-}"
+  _long_sha="${5:-}"
+  _date="${6:-}"
+  if [ -z "$_sha" ] || [ -z "$_long_sha" ] || [ -z "$_date" ]; then
+    if check_cmd git \
+      && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      if [ -z "$_sha" ]; then
+        _sha="$(git show -s --format=%h)"
+        if ! git diff-index --quiet HEAD --; then
+          _sha="${_sha}-dirty"
+        fi
+      fi
+      if [ -z "$_long_sha" ]; then
+        _long_sha="$(git show -s --format=%H)"
+        case "$_sha" in
+          *-dirty) _long_sha="${_long_sha}-dirty" ;;
+        esac
+      fi
+      if [ -z "$_date" ]; then
+        _date="$(git show -s --format=%ad --date=short)"
+      fi
+    fi
+  fi
+  if [ -n "$_sha" ] && [ -n "$_date" ]; then
+    echo "$_program $_version ($_sha $_date)"
+  else
+    echo "$_program $_version"
+  fi
+  if [ "$_verbose" = "true" ]; then
+    echo "release: $_version"
+    if [ -n "$_long_sha" ]; then
+      echo "commit-hash: $_long_sha"
+    fi
+    if [ -n "$_date" ]; then
+      echo "commit-date: $_date"
+    fi
+  fi
+  unset _program _version _verbose _sha _long_sha _date
+}
+section() {
+  case "${TERM:-}" in
+    *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
+      printf -- "\033[1;36;40m--- \033[1;37;40m%s\033[0m\n" "$1"
+      ;;
+    *)
+      printf -- "--- %s\n" "$1"
+      ;;
+  esac
+}
+setup_traps() {
+  local _sig
+  for _sig in HUP INT QUIT ALRM TERM; do
+    trap "
+      $1
+      trap - $_sig EXIT
+      kill -s $_sig "'"$$"' "$_sig"
+  done
+  if [ -n "${ZSH_VERSION:-}" ]; then
+    eval "zshexit() { eval '$1'; }"
+  else
+    # shellcheck disable=SC2064
+    trap "$1" EXIT
+  fi
+  unset _sig
+}
+trap_cleanup_directories() {
+  set +e
+  if [ -n "${__CLEANUP_DIRECTORIES__:-}" ] \
+    && [ -f "$__CLEANUP_DIRECTORIES__" ]; then
+    local _dir
+    while read -r _dir; do
+      rm -rf "$_dir"
+    done <"$__CLEANUP_DIRECTORIES__"
+    unset _dir
+    rm -f "$__CLEANUP_DIRECTORIES__"
+  fi
+}
+trap_cleanup_files() {
+  set +e
+  if [ -n "${__CLEANUP_FILES__:-}" ] && [ -f "$__CLEANUP_FILES__" ]; then
+    local _file
+    while read -r _file; do
+      rm -f "$_file"
+    done <"$__CLEANUP_FILES__"
+    unset _file
+    rm -f "$__CLEANUP_FILES__"
+  fi
+}
+warn() {
+  case "${TERM:-}" in
+    *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
+      printf -- "\033[1;31;40m!!! \033[1;37;40m%s\033[0m\n" "$1"
+      ;;
+    *)
+      printf -- "!!! %s\n" "$1"
+      ;;
+  esac
+}
+check_cmd() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    return 1
+  fi
+}
 cleanup_directory() {
-  local _dir
-  _dir="$1"
-
-  # If a tempfile hasn't been setup yet, create it
   if [ -z "${__CLEANUP_DIRECTORIES__:-}" ]; then
     __CLEANUP_DIRECTORIES__="$(mktemp_file)"
-
-    # If the result string is empty, tempfile wasn't created so report failure
     if [ -z "$__CLEANUP_DIRECTORIES__" ]; then
       return 1
     fi
   fi
-
-  echo "$_dir" >>"$__CLEANUP_DIRECTORIES__"
-  unset _dir
+  echo "$1" >>"$__CLEANUP_DIRECTORIES__"
 }
-
-# Tracks a file for later cleanup in a trap handler.
-#
-# This function can be called immediately after a temp file is created, before
-# a file is created, or long after a file exists. When used in combination with
-# [`trap_cleanup_files`], all files registered by calling `cleanup_file` will
-# be removed if they exist when `trap_cleanup_files` is invoked.
-#
-# * `@param [String]` path to file
-# * `@return 0` if successful
-# * `@return 1` if a temp file could not be created
-#
-# [`trap_cleanup_files`]: #function.trap_cleanup_files
-#
-# # Global Variables
-#
-# * `__CLEANUP_FILES__` used to track the collection of files to clean up whose
-#   value is a file. If not declared or set, this function will set it up.
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# file="$(mktemp_file)"
-# cleanup_file "$file"
-# # do work on file, etc.
-# ```
 cleanup_file() {
-  local _file
-  _file="$1"
-
-  # If a tempfile hasn't been setup yet, create it
   if [ -z "${__CLEANUP_FILES__:-}" ]; then
     __CLEANUP_FILES__="$(mktemp_file)"
-
-    # If the result string is empty, tempfile wasn't created so report failure
     if [ -z "$__CLEANUP_FILES__" ]; then
       return 1
     fi
   fi
-
-  echo "$_file" >>"$__CLEANUP_FILES__"
-  unset _file
+  echo "$1" >>"$__CLEANUP_FILES__"
 }
-
-# Prints an error message to standard error and exits with a non-zero exit
-# code.
-#
-# * `@param [String]` warning text
-# * `@stderr` warning text message
-#
-# # Environment Variables
-#
-# * `TERM` used to determine whether or not the terminal is capable of printing
-#   colored output.
-#
-# # Notes
-#
-# This function calls `exit` and will **not** return.
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# die "No program to download tarball"
-# ```
 die() {
-  local _msg
-  _msg="$1"
-
   case "${TERM:-}" in
     *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
-      printf -- "\n\033[1;31;40mxxx \033[1;37;40m%s\033[0m\n\n" "$_msg" >&2
+      printf -- "\n\033[1;31;40mxxx \033[1;37;40m%s\033[0m\n\n" "$1" >&2
       ;;
     *)
-      printf -- "\nxxx %s\n\n" "$_msg" >&2
+      printf -- "\nxxx %s\n\n" "$1" >&2
       ;;
   esac
-
-  unset _msg
   exit 1
 }
-
-# Downloads the contents at the given URL to the given local file.
-#
-# This implementation attempts to use the `curl` program with a fallback to the
-# `wget` program and a final fallback to the `ftp` program. The first download
-# program to succeed is used and if all fail, this function returns a non-zero
-# code.
-#
-# * `@param [String]` download URL
-# * `@param [String]` destination file
-# * `@return 0` if a download was successful
-# * `@return 1` if a download was not successful
-#
-# # Notes
-#
-# At least one of `curl`, `wget`, or `ftp must be compiled with SSL/TLS support
-# to be able to download from `https` sources.
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# download http://example.com/file.txt /tmp/file.txt
-# ```
 download() {
   local _url _dst _code _orig_flags
   _url="$1"
   _dst="$2"
-
   need_cmd sed
-
-  # Attempt to download with curl, if found. If successful, quick return
   if check_cmd curl; then
     info "Downloading $_url to $_dst (curl)"
     _orig_flags="$-"
     set +e
     curl -sSfL "$_url" -o "$_dst"
-    code="$?"
+    _code="$?"
     set "-$(echo "$_orig_flags" | sed s/s//g)"
-    if [ $code -eq 0 ]; then
+    if [ $_code -eq 0 ]; then
       unset _url _dst _code _orig_flags
       return 0
     else
@@ -624,8 +596,6 @@ download() {
       unset _e
     fi
   fi
-
-  # Attempt to download with wget, if found. If successful, quick return
   if check_cmd wget; then
     info "Downloading $_url to $_dst (wget)"
     _orig_flags="$-"
@@ -644,8 +614,6 @@ download() {
       unset _e
     fi
   fi
-
-  # Attempt to download with ftp, if found. If successful, quick return
   if check_cmd ftp; then
     info "Downloading $_url to $_dst (ftp)"
     _orig_flags="$-"
@@ -664,52 +632,16 @@ download() {
       unset _e
     fi
   fi
-
   unset _url _dst _code _orig_flags
-  # If we reach this point, curl, wget and ftp have failed and we're out of
-  # options
   warn "Downloading requires SSL-enabled 'curl', 'wget', or 'ftp' on PATH"
   return 1
 }
-
-# Indents the output from a command while preserving the command's exit code.
-#
-# In minimal/POSIX shells there is no support for `set -o pipefail` which means
-# that the exit code of the first command in a shell pipeline won't be
-# addressable in an easy way. This implementation uses a temp file to ferry the
-# original command's exit code from a subshell back into the main function. The
-# output can be aligned with a pipe to `sed` as before but now we have an
-# implementation which mimicks a `set -o pipefail` which should work on all
-# Bourne shells. Note that the `set -o errexit` is disabled during the
-# command's invocation so that its exit code can be captured.
-#
-# Based on implementation from: https://stackoverflow.com/a/54931544
-#
-# * `@param [String[]]` command and arguments
-# * `@return` the exit code of the command which was executed
-#
-# # Notes
-#
-# In order to preserve the output order of the command, the `stdout` and
-# `stderr` streams are combined, so the command will not emit its `stderr`
-# output to the caller's `stderr` stream.
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# indent cat /my/file
-# ```
 indent() {
   local _ecfile _ec _orig_flags
-
   need_cmd cat
   need_cmd rm
   need_cmd sed
-
   _ecfile="$(mktemp_file)"
-
   _orig_flags="$-"
   set +e
   {
@@ -719,63 +651,19 @@ indent() {
   set "-$(echo "$_orig_flags" | sed s/s//g)"
   _ec="$(cat "$_ecfile")"
   rm -f "$_ecfile"
-
   unset _ecfile _orig_flags
   return "${_ec:-5}"
 }
-
-# Prints an informational, detailed step to standard out.
-#
-# * `@param [String]` informational text
-# * `@stdout` informational heading text
-# * `@return 0` if successful
-#
-# # Environment Variables
-#
-# * `TERM` used to determine whether or not the terminal is capable of printing
-#   colored output.
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# info "Downloading tarball"
-# ```
 info() {
-  local _msg
-  _msg="$1"
-
   case "${TERM:-}" in
     *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
-      printf -- "\033[1;36;40m  - \033[1;37;40m%s\033[0m\n" "$_msg"
+      printf -- "\033[1;36;40m  - \033[1;37;40m%s\033[0m\n" "$1"
       ;;
     *)
-      printf -- "  - %s\n" "$_msg"
+      printf -- "  - %s\n" "$1"
       ;;
   esac
-
-  unset _msg
 }
-
-# Completes printing an informational, detailed step to standard out which has
-# no output, started with `info_start`
-#
-# * `@stdout` informational heading text
-# * `@return 0` if successful
-#
-# # Environment Variables
-#
-# * `TERM` used to determine whether or not the terminal is capable of printing
-#   colored output.
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# info_start "Copying file"
-# ```
 info_end() {
   case "${TERM:-}" in
     *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
@@ -786,455 +674,15 @@ info_end() {
       ;;
   esac
 }
-
-# Prints an informational, detailed step to standard out which has no output.
-#
-# * `@param [String]` informational text
-# * `@stdout` informational heading text
-# * `@return 0` if successful
-#
-# # Environment Variables
-#
-# * `TERM` used to determine whether or not the terminal is capable of printing
-#   colored output.
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# info_start "Copying file"
-# ```
 info_start() {
-  local _msg
-  _msg="$1"
-
   case "${TERM:-}" in
     *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
-      printf -- "\033[1;36;40m  - \033[1;37;40m%s ... \033[0m" "$_msg"
+      printf -- "\033[1;36;40m  - \033[1;37;40m%s ... \033[0m" "$1"
       ;;
     *)
-      printf -- "  - %s ... " "$_msg"
+      printf -- "  - %s ... " "$1"
       ;;
   esac
-
-  unset _msg
-}
-
-# Creates a temporary directory and prints the name to standard output.
-#
-# Most system use the first no-argument version, however Mac OS X 10.10
-# (Yosemite) and older don't allow the no-argument version, hence the second
-# fallback version.
-#
-# All tested invocations will create a file in each platform's suitable
-# temporary directory.
-#
-# * `@param [optional, String] parent directory
-# * `@stdout` path to temporary directory
-# * `@return 0` if successful
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# dir="$(mktemp_directory)"
-# # use directory
-# ```
-#
-# With a custom parent directory:
-#
-# ```sh
-# dir="$(mktemp_directory $HOME)"
-# # use directory
-# ```
-mktemp_directory() {
-  local _parent_dir
-  _parent_dir="${1:-}"
-
-  if [ -n "$_parent_dir" ]; then
-    mktemp -d "$_parent_dir/tmp.XXXXXX"
-  else
-    mktemp -d 2>/dev/null || mktemp -d -t tmp
-  fi
-}
-
-# Creates a temporary file and prints the name to standard output.
-#
-# Most systems use the first no-argument version, however Mac OS X 10.10
-# (Yosemite) and older don't allow the no-argument version, hence the second
-# fallback version.
-
-# All tested invocations will create a file in each platform's suitable
-# temporary directory.
-#
-# * `@param [optional, String] parent directory
-# * `@stdout` path to temporary file
-# * `@return 0` if successful
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# file="$(mktemp_file)"
-# # use file
-# ```
-# shellcheck disable=SC2120
-#
-# With a custom parent directory:
-#
-# ```sh
-# dir="$(mktemp_file $HOME)"
-# # use file
-# ```
-mktemp_file() {
-  local _parent_dir
-  _parent_dir="${1:-}"
-
-  if [ -n "$_parent_dir" ]; then
-    mktemp "$_parent_dir/tmp.XXXXXX"
-  else
-    mktemp 2>/dev/null || mktemp -t tmp
-  fi
-
-  unset _parent_dir
-}
-
-# Prints an error message and exits with a non-zero code if the program is not
-# available on the system PATH.
-#
-# * `@param [String] program name
-# * `@stderr` a warning message is printed if program cannot be found
-#
-# # Environment Variables
-#
-# * `PATH` indirectly used to search for the program
-#
-# # Notes
-#
-# If the program is not found, this function calls `exit` and will **not**
-# return.
-#
-# # Examples
-#
-# Basic usage, when used as a guard or pre-requisite in a function:
-#
-# ```sh
-# need_cmd git
-# ```
-need_cmd() {
-  local _cmd
-  _cmd="$1"
-
-  if ! check_cmd "$_cmd"; then
-    die "Required command '$_cmd' not found on PATH"
-  fi
-
-  unset _cmd
-  return 0
-}
-
-# Prints program version information to standard out.
-#
-# The minimal implementation will output the program name and version,
-# separated with a space, such as `my-program 1.2.3`. However, if the Git
-# program is detected and the current working directory is under a Git
-# repository, then more information will be displayed. Namely, the short Git
-# SHA and author commit date will be appended in parenthesis at end of the
-# line. For example, `my-program 1.2.3 (abc123 2000-01-02)`.
-#
-# If verbose mode is enable by setting the optional third argument to a
-# non-empty value, then a detailed version report will be appended to the
-# single line "simple mode". Assuming that the Git program is available and the
-# current working directory is under a Git repository, then three extra lines
-# will be emitted:
-#
-# 1. `release: 1.2.3` the version string
-# 2. `commit-hash: abc...` the full Git SHA of the current commit
-# 3. `commit-date: 2000-01-02` the author commit date of the current commit
-#
-# If Git is not found, then only the `release: 1.2.3` line will be emitted for
-# verbose mode.
-#
-# Finally, if the Git repository is not "clean", that is if it contains
-# uncommitted or modified files, a `-dirty` suffix will be added to the short
-# and long Git SHA refs to signal that the implementation may not perfectly
-# correspond to a SHA commit.
-#
-# * `@param [String] program name
-# * `@param [String] version string
-# * `@param [optional, String] verbose mode set if non-empty
-# * `@stdout` version information
-# * `@return 0` if successful
-#
-# Note that the implementation for this function was inspired by Rust's `cargo
-# version`, see: https://git.io/fjsOh
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# print_version "my-program" "1.2.3"
-# ```
-#
-# A non-empty third argument puts the function in verbose mode and more detail
-# is output to standard out:
-#
-# ```sh
-# print_version "my-program" "1.2.3" "true"
-# ```
-#
-# An empty third argument is the same as only providing two arguments (i.e.
-# non-verbose):
-#
-# ```sh
-# print_version "my-program" "1.2.3" ""
-# ```
-print_version() {
-  local _program _version _verbose
-  _program="$1"
-  shift
-  _version="$1"
-  shift
-  _verbose=""
-  if [ -n "${1:-}" ]; then
-    _verbose="$1"
-  fi
-
-  if check_cmd git \
-    && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    local _date _sha
-    _date="$(git show -s --format=%ad --date=short)"
-    _sha="$(git show -s --format=%h)"
-    if ! git diff-index --quiet HEAD --; then
-      _sha="${_sha}-dirty"
-    fi
-
-    echo "$_program $_version ($_sha $_date)"
-
-    if [ -n "$_verbose" ]; then
-      local _long_sha
-      _long_sha="$(git show -s --format=%H)"
-      case "$_sha" in
-        *-dirty) _long_sha="${_long_sha}-dirty" ;;
-      esac
-
-      echo "release: $_version"
-      echo "commit-hash: $_long_sha"
-      echo "commit-date: $_date"
-
-      unset _long_sha
-    fi
-
-    unset _date _sha
-  else
-    echo "$_program $_version"
-
-    if [ -n "$_verbose" ]; then
-      echo "release: $_version"
-    fi
-  fi
-
-  unset _program _version _verbose
-}
-
-# Prints a section-delimiting header to standard out.
-#
-# * `@param [String]` section heading text
-# * `@stdout` section heading text
-# * `@return 0` if successful
-#
-# # Environment Variables
-#
-# * `TERM` used to determine whether or not the terminal is capable of printing
-#   colored output.
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# section "Building project"
-# ```
-section() {
-  local _msg
-  _msg="$1"
-
-  case "${TERM:-}" in
-    *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
-      printf -- "\033[1;36;40m--- \033[1;37;40m%s\033[0m\n" "$_msg"
-      ;;
-    *)
-      printf -- "--- %s\n" "$_msg"
-      ;;
-  esac
-
-  unset _msg
-}
-
-# Sets up traps for `EXIT` and common signals with the given cleanup function.
-#
-# In addition to `EXIT`, the `HUP`, `INT`, `QUIT`, `ALRM`, and `TERM` signals
-# are also covered.
-#
-# This implementation was based on a very nice, portable signal handling thread
-# thanks to: https://unix.stackexchange.com/a/240736
-#
-# * `@param [String]` name of function to run with traps
-#
-# # Examples
-#
-# Basic usage with a simple "hello world" cleanup function:
-#
-# ```sh
-# hello_trap() {
-#   echo "Hello, trap!"
-# }
-#
-# setup_traps hello_trap
-# ```
-#
-# If the cleanup is simple enough to be a one-liner, you can provide the
-# command as the single argument:
-#
-# ```sh
-# setup_traps "echo 'Hello, World!'"
-# ```
-setup_traps() {
-  local _trap_fun
-  _trap_fun="$1"
-
-  local _sig
-  for _sig in HUP INT QUIT ALRM TERM; do
-    trap "
-      $_trap_fun
-      trap - $_sig EXIT
-      kill -s $_sig "'"$$"' "$_sig"
-  done
-
-  if [ -n "${ZSH_VERSION:-}" ]; then
-    # Zsh uses the `EXIT` trap for a function if declared in a function.
-    # Instead, use the `zshexit()` hook function which targets the exiting of a
-    # shell interpreter. Additionally, a function in Zsh is not a closure over
-    # outer variables, so we'll use `eval` to construct the function body
-    # containing the cleanup function to invoke.
-    #
-    # See:
-    # * https://stackoverflow.com/a/22794374
-    # * http://zsh.sourceforge.net/Doc/Release/Functions.html#Hook-Functions
-    eval "zshexit() { eval '$_trap_fun'; }"
-  else
-    # shellcheck disable=SC2064
-    trap "$_trap_fun" EXIT
-  fi
-
-  unset _trap_fun _sig
-}
-
-# Removes any tracked directories registered via [`cleanup_directory`].
-#
-# * `@return 0` whether or not an error has occurred
-#
-# [`cleanup_directory`]: #function.cleanup_directory
-#
-# # Global Variables
-#
-# * `__CLEANUP_DIRECTORIES__` used to track the collection of files to clean up
-#   whose value is a file. If not declared or set, this function will assume
-#   there is no work to do.
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# trap trap_cleanup_directories 1 2 3 15 ERR EXIT
-#
-# dir="$(mktemp_directory)"
-# cleanup_directory "$dir"
-# # do work on directory, etc.
-# ```
-trap_cleanup_directories() {
-  set +e
-
-  if [ -n "${__CLEANUP_DIRECTORIES__:-}" ] \
-    && [ -f "$__CLEANUP_DIRECTORIES__" ]; then
-    while read -r directory; do
-      rm -rf "$directory"
-    done <"$__CLEANUP_DIRECTORIES__"
-    rm -f "$__CLEANUP_DIRECTORIES__"
-  fi
-}
-
-# Removes any tracked files registered via [`cleanup_file`].
-#
-# * `@return 0` whether or not an error has occurred
-#
-# [`cleanup_file`]: #function.cleanup_file
-#
-# # Global Variables
-#
-# * `__CLEANUP_FILES__` used to track the collection of files to clean up whose
-#   value is a file. If not declared or set, this function will assume there is
-#   no work to do.
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# trap trap_cleanup_files 1 2 3 15 ERR EXIT
-#
-# file="$(mktemp_file)"
-# cleanup_file "$file"
-# # do work on file, etc.
-# ```
-trap_cleanup_files() {
-  set +e
-
-  if [ -n "${__CLEANUP_FILES__:-}" ] && [ -f "$__CLEANUP_FILES__" ]; then
-    while read -r file; do
-      rm -f "$file"
-    done <"$__CLEANUP_FILES__"
-    rm -f "$__CLEANUP_FILES__"
-  fi
-}
-
-# Prints a warning message to standard out.
-#
-# * `@param [String]` warning text
-# * `@stdout` warning heading text
-# * `@return 0` if successful
-#
-# # Environment Variables
-#
-# * `TERM` used to determine whether or not the terminal is capable of printing
-#   colored output.
-#
-# # Examples
-#
-# Basic usage:
-#
-# ```sh
-# warn "Could not connect to service"
-# ```
-warn() {
-  local _msg
-  _msg="$1"
-
-  case "${TERM:-}" in
-    *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
-      printf -- "\033[1;31;40m!!! \033[1;37;40m%s\033[0m\n" "$_msg"
-      ;;
-    *)
-      printf -- "!!! %s\n" "$_msg"
-      ;;
-  esac
-
-  unset _msg
 }
 
 # END: libsh.sh
