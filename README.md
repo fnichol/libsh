@@ -1,74 +1,38 @@
-# libsh
+<h1 align="center">
+  <br/>
+  libsh
+  <br/>
+</h1>
 
-A library of common [POSIX shell] functions
+<h4 align="center">
+  A library of common, reusable, and portable
+  <a href="http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html">POSIX shell</a>
+  functions.
+</h4>
 
-|                  |                                                         |
-| ---------------: | ------------------------------------------------------- |
-|               CI | [![CI Status][badge-overall]][ci]                       |
-|   Latest Version | [![Latest version][badge-version]][github]              |
-| GitHub Downloads | [![GitHub downloads][badge-github-dl]][github-releases] |
-|          License | [![License][badge-license]][license]                    |
+|                  |                                                                                 |
+| ---------------: | ------------------------------------------------------------------------------- |
+|               CI | [![CI Status][badge-overall]][ci] [![Bors enabled][badge-bors]][bors-dashboard] |
+|   Latest Version | [![Latest version][badge-version]][github]                                      |
+| GitHub Downloads | [![GitHub downloads][badge-github-dl]][github-releases]                         |
+|          License | [![License][badge-license]][license]                                            |
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
 
 <!-- toc -->
 
-- [API](#api)
-  - [check_cmd](#check_cmd)
-    - [Environment Variables](#environment-variables)
-    - [Examples](#examples)
-  - [cleanup_directory](#cleanup_directory)
-    - [Global Variables](#global-variables)
-    - [Examples](#examples-1)
-  - [cleanup_file](#cleanup_file)
-    - [Global Variables](#global-variables-1)
-    - [Examples](#examples-2)
-  - [die](#die)
-    - [Environment Variables](#environment-variables-1)
-    - [Notes](#notes)
-    - [Examples](#examples-3)
-  - [download](#download)
-    - [Notes](#notes-1)
-    - [Examples](#examples-4)
-  - [indent](#indent)
-    - [Notes](#notes-2)
-    - [Examples](#examples-5)
-  - [info_end](#info_end)
-    - [Environment Variables](#environment-variables-2)
-    - [Examples](#examples-6)
-  - [info_start](#info_start)
-    - [Environment Variables](#environment-variables-3)
-    - [Examples](#examples-7)
-  - [info](#info)
-    - [Environment Variables](#environment-variables-4)
-    - [Examples](#examples-8)
-  - [mktemp_directory](#mktemp_directory)
-    - [Examples](#examples-9)
-  - [mktemp_file](#mktemp_file)
-    - [Examples](#examples-10)
-  - [need_cmd](#need_cmd)
-    - [Environment Variables](#environment-variables-5)
-    - [Notes](#notes-3)
-    - [Examples](#examples-11)
-  - [print_version](#print_version)
-    - [Examples](#examples-12)
-  - [section](#section)
-    - [Environment Variables](#environment-variables-6)
-    - [Examples](#examples-13)
-  - [setup_traps](#setup_traps)
-    - [Examples](#examples-14)
-  - [trap_cleanup_directories](#trap_cleanup_directories)
-    - [Global Variables](#global-variables-2)
-    - [Examples](#examples-15)
-  - [trap_cleanup_files](#trap_cleanup_files)
-    - [Global Variables](#global-variables-3)
-    - [Examples](#examples-16)
-  - [warn](#warn)
-    - [Environment Variables](#environment-variables-7)
-    - [Examples](#examples-17)
+- [What is libsh?](#what-is-libsh)
+- [Motivation](#motivation)
+- [Usage](#usage)
+- [Installation](#installation)
+  - [install.sh](#installsh)
+  - [GitHub Releases](#github-releases)
+  - [Bespoke](#bespoke)
+- [Code of Conduct](#code-of-conduct)
 - [Issues](#issues)
 - [Contributing](#contributing)
+- [Release History](#release-history)
 - [Authors](#authors)
 - [License](#license)
   - [Contribution](#contribution)
@@ -77,515 +41,217 @@ A library of common [POSIX shell] functions
 
 </details>
 
-## API
+## What is libsh?
 
-### check_cmd
+libsh is a collection is small, single purpose shell functions that help
+developers write consistent, well-formatted, portable scripts and programs
+without having to re-implement common tasks such as section printing, file
+downloading, trap handling, etc.
 
-Determines whether or not a program is available on the system PATH.
+The project is actively run and tested against several shell implementations,
+including but not limited to:
 
-- `@param [String]` program name
-- `@return 0` if program is found on system PATH
-- `@return 1` if program is not found
+- [Bash]
+- [BusyBox ash]
+- [DASH]
+- [KornShell]
+- [Zsh]
+- [sh]
 
-#### Environment Variables
+Additionally, several operating systems and distributions are tested and
+targeting including:
 
-- `PATH` indirectly used to search for the program
+- [FreeBSD]
+- [Linux distributions]
+- [OpenBSD]
+- [macOS]
 
-#### Examples
+To help increase its use cases, several alternative bundles are provided called
+"distributions" which allow a user to consume the full library or a smaller
+subset. Currently, there are 2 main distributions, each with a comments included
+and a minified version:
 
-Basic usage, when used as a conditional check:
+- full
+- full-minified
+- minimal
+- minimal-minified
+
+The details for each distribution can be found in the [`distrib/`] directory.
+
+[sh]: https://en.wikipedia.org/wiki/Almquist_shell
+[bash]: https://www.gnu.org/software/bash/
+[zsh]: https://www.zsh.org/
+[dash]: http://gondor.apana.org.au/~herbert/dash/
+[kornshell]: http://www.kornshell.org/
+[busybox ash]: https://www.busybox.net/
+[linux distributions]: https://en.wikipedia.org/wiki/List_of_Linux_distributions
+[macos]: https://www.apple.com/macos/
+[freebsd]: https://www.freebsd.org/
+[openbsd]: https://www.openbsd.org/
+[`distrib/`]: https://github.com/fnichol/libsh/tree/main/distrib
+
+## Motivation
+
+Writing scripts and programs in shell code can be both rapid and responsive
+while at the same time being arcane and intensely error-prone. Add to that there
+is little ability to re-use ideas and implementations short of copy/pasting
+bodies of code around. libsh was born out of a desire to write some of these
+common solutions for the **last time**.
+
+As time moves forward, these snippets of code are used in a new environment,
+whether that is unintentionally a new shell implementation (for example, running
+a script for the first time on Ubuntu which uses DASH as its `/bin/sh` or in an
+Alpine Linux container which uses BusyBox's `ash`) or on a new system (for
+example, on macOS which now defaults to Zsh vs. a BSD variant which may default
+to KornShell). Likely something breaks and the resulting lesson is "this code is
+not portable" or "I need to install a full Bash to make this work properly".
+libsh also has a goal here to run with the same behavior in as many places as
+possible to ensure that a solution to a problem can truly be re-used.
+
+In an attempt to solve for the "copy/paste" and version drift issues, an
+installer is provided that will install releases of this library into your
+project as a standalone file or in-lined into a script with an insertion
+directive comment. This allows a user to update their codebases when new
+versions of libsh are released in as painless a way as possible. If the full
+library is more than is needed or if the file size becomes an issue, several
+"distributions" are provided as a way to consume no more than you need.
+
+If you have been nodding along so far, we hope you can use some of our
+collective knowledge rolled into libsh in your shell-based projects!
+
+## Usage
+
+There are multiple ways to consume libsh, but the provided `install.sh` is the
+quickest to get started. Here's how to download the latest release of the full
+and minified version of libsh, which will be written to
+`./vendor/lib/libsh.full-minified.sh`:
 
 ```sh
-if check_cmd git; then
-  echo "Found Git"
-fi
+curl -sSf https://fnichol.github.io/libsh/install.sh | sh -s -- -d full-minified
 ```
 
-### cleanup_directory
+More installations options are described in the [Installation](#installation)
+section.
 
-Tracks a directory for later cleanup in a trap handler.
-
-This function can be called immediately after a temp directory is created,
-before a directory is created, or long after a directory exists. When used in
-combination with [`trap_cleanup_directories`], all directories registered by
-calling `cleanup_directory` will be removed if they exist when
-`trap_cleanup_directories` is invoked.
-
-- `@param [String]` path to directory
-- `@return 0` if successful
-- `@return 1` if a temp file could not be created
-
-[`trap_cleanup_directories`]: #trap_cleanup_directories
-
-#### Global Variables
-
-- `__CLEANUP_DIRECTORIES__` used to track the collection of directories to clean
-  up whose value is a file. If not declared or set, this function will set it
-  up.
-
-#### Examples
-
-Basic usage:
+What follows is an example of a program installer script which downloads a
+tarball from a website, extracts, and installs it. As is often the case, what
+starts out seemingly an easy task, quickly becomes complex when dealing with
+error conditions such as required programs not being found, temporary files and
+directories not getting cleaned up, etc. Here's how libsh's library can help:
 
 ```sh
-dir="$(mktemp_directory)"
-cleanup_directory "$dir"
-# do work on directory, etc.
-```
+#!/usr/bin/env sh
+set -eu
 
-### cleanup_file
+# source/import library functions into script or alternatively insert a
+# distribution directly into the script with the `install.sh` program and a
+# line in the script containing only `# INSERT: libsh.sh`
+. "vendor/lib/libsh.full-minified.sh"
 
-Tracks a file for later cleanup in a trap handler.
+# add traps to automatically cleanup an directories on exit/abort/etc
+setup_traps trap_cleanup_directories
 
-This function can be called immediately after a temp file is created, before a
-file is created, or long after a file exists. When used in combination with
-[`trap_cleanup_files`], all files registered by calling `cleanup_file` will be
-removed if they exist when `trap_cleanup_files` is invoked.
+# write a heading style section banner to start off the script with color if
+# the terminal supports it
+section "Downloading program"
 
-- `@param [String]` path to file
-- `@return 0` if successful
-- `@return 1` if a temp file could not be created
+# create a temporary directory in the system's appropriate TEMPDIR
+tmpdir="$(mktemp_directory)"
+# defer cleaning up this directory until the end of the program, on success or
+# failure, making use of the traps set above
+cleanup_directory "$tmpdir"
 
-[`trap_cleanup_files`]: #trap_cleanup_files
+# download a file use curl, wget, of ftp (on OpenBSD), whichever is found and
+# terminate the program if a suitable download program cannot be found
+download https://example.com/program.tar.gz "$tmpdir/program.tar.gz" \
+  || die "no download program found"
 
-#### Global Variables
+# write a progress, sub task of the above section, again with color if supported
+info "Extracting program"
+# check and ensure that the `tar` program is found and terminate the program if
+# it is not found
+need_cmd tar
+tar xvzf $tmpdir/program.tar.gz -C "$tmpdir"
 
-- `__CLEANUP_FILES__` used to track the collection of files to clean up whose
-  value is a file. If not declared or set, this function will set it up.
-
-#### Examples
-
-Basic usage:
-
-```sh
-file="$(mktemp_file)"
-cleanup_file "$file"
-# do work on file, etc.
-```
-
-### die
-
-Prints an error message to standard error and exits with a non-zero exit code.
-
-- `@param [String]` warning text
-- `@stderr` warning text message
-
-#### Environment Variables
-
-- `TERM` used to determine whether or not the terminal is capable of printing
-  colored output.
-
-#### Notes
-
-This function calls `exit` and will **not** return.
-
-#### Examples
-
-Basic usage:
-
-```sh
-die "No program to download tarball"
-```
-
-### download
-
-Downloads the contents at the given URL to the given local file.
-
-This implementation attempts to use the `curl` program with a fallback to the
-`wget` program and a final fallback to the `ftp` program. The first download
-program to succeed is used and if all fail, this function returns a non-zero
-code.
-
-- `@param [String]` download URL
-- `@param [String]` destination file
-- `@return 0` if a download was successful
-- `@return 1` if a download was not successful
-
-#### Notes
-
-At least one of `curl`, `wget`, or `ftp` must be compiled with SSL/TLS support
-to be able to download from `https` sources.
-
-#### Examples
-
-Basic usage:
-
-```sh
-download http://example.com/file.txt /tmp/file.txt
-```
-
-### indent
-
-Indents the output from a command while preserving the command's exit code.
-
-In minimal/POSIX shells there is no support for `set -o pipefail` which means
-that the exit code of the first command in a shell pipeline won't be addressable
-in an easy way. This implementation uses a temp file to ferry the original
-command's exit code from a subshell back into the main function. The output can
-be aligned with a pipe to `sed` as before but now we have an implementation
-which mimics a `set -o pipefail` which should work on all Bourne shells. Note
-that the `set -o errexit` is disabled during the command's invocation so that
-its exit code can be captured.
-
-Based on implementation from
-[Stack Overflow](https://stackoverflow.com/a/54931544)
-
-- `@param [String[]]` command and arguments
-- `@return` the exit code of the command which was executed
-
-#### Notes
-
-In order to preserve the output order of the command, the `stdout` and `stderr`
-streams are combined, so the command will not emit its `stderr` output to the
-caller's `stderr` stream.
-
-#### Examples
-
-Basic usage:
-
-```sh
-indent cat /my/file
-```
-
-### info_end
-
-Completes printing an informational, detailed step to standard out which has no
-output, started with [`info_start`].
-
-- `@stdout` informational heading text
-- `@return 0` if successful
-
-[`info_start`]: #info_start
-
-#### Environment Variables
-
-- `TERM` used to determine whether or not the terminal is capable of printing
-  colored output.
-
-#### Examples
-
-Basic usage:
-
-```sh
+# write an info style line that will do some work without writing any output
+info_start "Installing program"
+install "$tmpdir/program" "$HOME/bin/program"
+# write an ending to the above info line with "done."
 info_end
+
+info "Program installed"
+# indent the output of the program's version output at a level to fall
+# "inside" the info banner
+indent "$HOME/bin/program --version"
 ```
 
-### info_start
+The full documented set of functions can be found on the [API] page.
 
-Prints an informational, detailed step to standard out which has no output.
+## Installation
 
-- `@param [String]` informational text
-- `@stdout` informational heading text
-- `@return 0` if successful
+There are various ways of consuming libsh, depending on needs, automation, etc.
 
-#### Environment Variables
+### install.sh
 
-- `TERM` used to determine whether or not the terminal is capable of printing
-  colored output.
+An installer is provided at <https://fnichol.github.io/libsh/install.sh> which
+can help install an initial version libsh or to upgrade a preexisting version.
+It can be downloaded and run locally or piped into a shell interpreter in the
+"curl-bash" style as shown below. Note that if you're opposed to this idea, no
+problem, download it, read it and use it (or not). Otherwise check out some of
+the alternatives below.
 
-#### Examples
-
-Basic usage:
+Vendor the latest full release into `./vendor/lib/libsh.full.sh`:
 
 ```sh
-info_start "Copying file"
+curl -sSf https://fnichol.github.io/libsh/install.sh | sh
 ```
 
-### info
-
-Prints an informational, detailed step to standard out.
-
-- `@param [String]` informational text
-- `@stdout` informational heading text
-- `@return 0` if successful
-
-#### Environment Variables
-
-- `TERM` used to determine whether or not the terminal is capable of printing
-  colored output.
-
-#### Examples
-
-Basic usage:
+Vendor a specific minimal release into `/tmp/common-functions.sh`:
 
 ```sh
-info "Downloading tarball"
+curl -sSf https://fnichol.github.io/libsh/install.sh | sh -s -- \
+  --release=0.0.1 --distribution=minimal --target=/tmp/common-functions.sh
 ```
 
-### mktemp_directory
-
-Creates a temporary directory and prints the name to standard output.
-
-Most system use the first no-argument version, however Mac OS X 10.10 (Yosemite)
-and older don't allow the no-argument version, hence the second fallback
-version.
-
-All tested invocations will create a file in each platform's suitable temporary
-directory.
-
-- `@param [optional, String]` parent directory
-- `@stdout` path to temporary directory
-- `@return 0` if successful
-
-#### Examples
-
-Basic usage:
+Insert the latest full release into `myprog.sh` at a line that contains only
+`# INSERT: libsh.sh`:
 
 ```sh
-dir="$(mktemp_directory)"
-# use directory
+curl -sSf https://fnichol.github.io/libsh/install.sh | sh -s -- \
+  --mode=insert --target=myprog.sh
 ```
 
-With a custom parent directory:
+Update the inserted version with a specific minimal/minified release in
+`cli.sh`:
 
 ```sh
-dir="$(mktemp_directory $HOME)"
-# use directory
+curl -sSf https://fnichol.github.io/libsh/install.sh | sh -s -- \
+  --mode=insert --release=0.0.1 --distribution=minimal-minified --target=cli.sh
 ```
 
-### mktemp_file
-
-Creates a temporary file and prints the name to standard output.
-
-Most systems use the first no-argument version, however Mac OS X 10.10
-(Yosemite) and older don't allow the no-argument version, hence the second
-fallback version.
-
-All tested invocations will create a file in each platform's suitable temporary
-directory.
-
-- `@param [optional, String]` parent directory
-- `@stdout` path to temporary file
-- `@return 0` if successful
-
-#### Examples
-
-Basic usage:
-
-```sh
-file="$(mktemp_file)"
-# use file
-```
-
-With a custom parent directory:
-
-```sh
-dir="$(mktemp_file "$HOME")"
-# use file
-```
-
-### need_cmd
-
-Prints an error message and exits with a non-zero code if the program is not
-available on the system PATH.
-
-- `@param [String]` program name
-- `@stderr` a warning message is printed if program cannot be found
-
-#### Environment Variables
-
-- `PATH` indirectly used to search for the program
-
-#### Notes
-
-If the program is not found, this function calls `exit` and will **not** return.
-
-#### Examples
-
-Basic usage, when used as a guard or prerequisite in a function:
-
-```sh
-need_cmd git
-```
-
-### print_version
-
-Prints program version information to standard out.
-
-The minimal implementation will output the program name and version, separated
-with a space, such as `my-program 1.2.3`. However, if the Git program is
-detected and the current working directory is under a Git repository, then more
-information will be displayed. Namely, the short Git SHA and author commit date
-will be appended in parenthesis at end of the line. For example,
-`my-program 1.2.3 (abc123 2000-01-02)`. Alternatively, if the Git commit
-information is known ahead of time, it can be provided via optional arguments.
-
-If verbose mode is enable by setting the optional third argument to a `true`,
-then a detailed version report will be appended to the single line "simple
-mode". Assuming that the Git program is available and the current working
-directory is under a Git repository, then three extra lines will be emitted:
-
-1. `release: 1.2.3` the version string
-2. `commit-hash: abc...` the full Git SHA of the current commit
-3. `commit-date: 2000-01-02` the author commit date of the current commit
-
-If Git is not found and no additional optional arguments are provided, then only
-the `release: 1.2.3` line will be emitted for verbose mode.
-
-Finally, if the Git repository is not "clean", that is if it contains
-uncommitted or modified files, a `-dirty` suffix will be added to the short and
-long Git SHA refs to signal that the implementation may not perfectly correspond
-to a SHA commit.
-
-- `@param [String]` program name
-- `@param [String]` version string
-- `@param [optional, String]` verbose mode set if value if `"true"`
-- `@param [optional, String]` short Git SHA
-- `@param [optional, String]` long Git SHA
-- `@param [optional, String]` commit/version date
-- `@stdout` version information
-- `@return 0` if successful
-
-Note that the implementation for this function was inspired by Rust's
-[`cargo version`](https://git.io/fjsOh).
-
-#### Examples
-
-Basic usage:
-
-```sh
-print_version "my-program" "1.2.3"
-```
-
-An optional third argument puts the function in verbose mode and more detail is
-output to standard out:
-
-```sh
-print_version "my-program" "1.2.3" "true"
-```
-
-An empty third argument is the same as only providing two arguments (i.e.
-non-verbose):
-
-```sh
-print_version "my-program" "1.2.3" ""
-```
-
-### section
-
-Prints a section-delimiting header to standard out.
-
-- `@param [String]` section heading text
-- `@stdout` section heading text
-- `@return 0` if successful
-
-#### Environment Variables
-
-- `TERM` used to determine whether or not the terminal is capable of printing
-  colored output.
-
-#### Examples
-
-Basic usage:
-
-```sh
-section "Building project"
-```
-
-### setup_traps
-
-Sets up traps for `EXIT` and common signals with the given cleanup function.
-
-In addition to `EXIT`, the `HUP`, `INT`, `QUIT`, `ALRM`, and `TERM` signals are
-also covered.
-
-This implementation was based on a very nice, portable signal handling thread
-thanks to an implementation on
-[Stack Overflow](https://unix.stackexchange.com/a/240736).
-
-- `@param [String]` name of function to run with traps
-
-#### Examples
-
-Basic usage with a simple "hello world" cleanup function:
-
-```sh
-hello_trap() {
-  echo "Hello, trap!"
-}
-
-setup_traps hello_trap
-```
-
-If the cleanup is simple enough to be a one-liner, you can provide the command
-as the single argument:
-
-```sh
-setup_traps "echo 'Hello, World!'"
-```
-
-### trap_cleanup_directories
-
-Removes any tracked directories registered via [`cleanup_directory`].
-
-- `@return 0` whether or not an error has occurred
-
-[`cleanup_directory`]: #cleanup_directory
-
-#### Global Variables
-
-- `__CLEANUP_DIRECTORIES__` used to track the collection of files to clean up
-  whose value is a file. If not declared or set, this function will assume there
-  is no work to do.
-
-#### Examples
-
-Basic usage:
-
-```sh
-trap trap_cleanup_directories 1 2 3 15 ERR EXIT
-
-dir="$(mktemp_directory)"
-cleanup_directory "$dir"
-# do work on directory, etc.
-```
-
-### trap_cleanup_files
-
-Removes any tracked files registered via [`cleanup_file`].
-
-- `@return 0` whether or not an error has occurred
-
-[`cleanup_file`]: #cleanup_file
-
-#### Global Variables
-
-- `__CLEANUP_FILES__` used to track the collection of files to clean up whose
-  value is a file. If not declared or set, this function will assume there is no
-  work to do.
-
-#### Examples
-
-Basic usage:
-
-```sh
-trap trap_cleanup_files 1 2 3 15 ERR EXIT
-
-file="$(mktemp_file)"
-cleanup_file "$file"
-# do work on file, etc.
-```
-
-### warn
-
-Prints a warning message to standard out.
-
-- `@param [String]` warning text
-- `@stdout` warning heading text
-- `@return 0` if successful
-
-#### Environment Variables
-
-- `TERM` used to determine whether or not the terminal is capable of printing
-  colored output.
-
-#### Examples
-
-Basic usage:
-
-```sh
-warn "Could not connect to service"
-```
+### GitHub Releases
+
+Each release of libsh comes with release artifacts published in [GitHub
+Releases][github-releases]. The `install.sh` program downloads its artifacts
+from this location so, this amounts to a manual/alternative way to consume
+libsh. Each artifact is also provided with MD5 and SHA256 checksums to help
+verify the artifact on a target system.
+
+### Bespoke
+
+While a full distribution of libsh does not live in a single file in [source
+control][github], each function lives in its own source file and imports its own
+direct function dependencies (example:
+[download.sh](https://github.com/fnichol/libsh/blob/main/lib/download.sh)). It
+is very doable to import/vendor/combine various functions for use in other
+programs without having to consume the entire library nor even a slimmer
+distribution, however this remains an exercise for the reader.
+
+## Code of Conduct
+
+This project adheres to the Contributor Covenant [code of
+conduct][code-of-conduct]. By participating, you are expected to uphold this
+code. Please report unacceptable behavior to fnichol@nichol.ca.
 
 ## Issues
 
@@ -602,6 +268,10 @@ Before you start to code, we recommend discussing your plans through a [GitHub
 issue][issues], especially for more ambitious contributions. This gives other
 contributors a chance to point you in the right direction, give you feedback on
 your design, and help you find out if someone else is working on the same thing.
+
+## Release History
+
+See the [changelog] for a full release history.
 
 ## Authors
 
@@ -624,13 +294,18 @@ Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
 dual licensed as above, without any additional terms or conditions.
 
+[api]: https://github.com/fnichol/libsh/blob/main/API.md
+[badge-bors]: https://bors.tech/images/badge_small.svg
 [badge-github-dl]:
   https://img.shields.io/github/downloads/fnichol/libsh/total.svg
 [badge-license]:
   https://img.shields.io/badge/License-Apache%202.0%20%2F%20MIT-blue.svg
 [badge-overall]: https://api.cirrus-ci.com/github/fnichol/libsh.svg
 [badge-version]: https://img.shields.io/github/tag/fnichol/libsh.svg
+[bors-dashboard]: https://app.bors.tech/repositories/32312
+[changelog]: https://github.com/fnichol/libsh/blob/main/CHANGELOG.md
 [ci]: https://cirrus-ci.com/github/fnichol/libsh
+[code-of-conduct]: https://github.com/fnichol/libsh/blob/main/CODE_OF_CONDUCT.md
 [fnichol]: https://github.com/fnichol
 [github-releases]: https://github.com/fnichol/libsh/releases
 [github]: https://github.com/fnichol/libsh
@@ -638,5 +313,3 @@ dual licensed as above, without any additional terms or conditions.
 [license]: #license
 [license-apachev2]: https://github.com/fnichol/libsh/blob/main/LICENSE-APACHE
 [license-mit]: https://github.com/fnichol/libsh/blob/main/LICENSE-MIT
-[posix shell]:
-  http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html
