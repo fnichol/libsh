@@ -65,11 +65,11 @@ main() {
 
   local program version author sha sha_long date
   program="install.sh"
-  version="0.8.0"
+  version="0.9.0"
   author="Fletcher Nichol <fnichol@nichol.ca>"
-  sha="0daf997"
-  sha_long="0daf997ec5026389d31461dd19f1d21082be737e"
-  date="2021-04-11"
+  sha="e155f96"
+  sha_long="e155f96bc281060342da4a19c26bf896f47de09c"
+  date="2021-04-14"
 
   # Parse CLI arguments and set local variables
   parse_cli_args "$program" "$version" "$author" "$sha" "$sha_long" "$date" "$@"
@@ -402,13 +402,13 @@ version_ge() {
 # --------
 # project: https://github.com/fnichol/libsh
 # author: Fletcher Nichol <fnichol@nichol.ca>
-# version: 0.8.0
+# version: 0.9.0
 # distribution: libsh.full-minified.sh
-# commit-hash: 0daf997ec5026389d31461dd19f1d21082be737e
-# commit-date: 2021-04-11
-# artifact: https://github.com/fnichol/libsh/releases/download/v0.8.0/libsh.full.sh
-# source: https://github.com/fnichol/libsh/tree/v0.8.0
-# archive: https://github.com/fnichol/libsh/archive/v0.8.0.tar.gz
+# commit-hash: e155f96bc281060342da4a19c26bf896f47de09c
+# commit-date: 2021-04-14
+# artifact: https://github.com/fnichol/libsh/releases/download/v0.9.0/libsh.full.sh
+# source: https://github.com/fnichol/libsh/tree/v0.9.0
+# archive: https://github.com/fnichol/libsh/archive/v0.9.0.tar.gz
 #
 if [ -n "${KSH_VERSION:-}" ]; then
   eval "local() { return 0; }"
@@ -431,10 +431,26 @@ mktemp_file() {
     mktemp 2>/dev/null || mktemp -t tmp
   fi
 }
+trap_cleanup_files() {
+  set +e
+  if [ -n "${__CLEANUP_FILES__:-}" ] && [ -f "$__CLEANUP_FILES__" ]; then
+    local _file
+    while read -r _file; do
+      rm -f "$_file"
+    done <"$__CLEANUP_FILES__"
+    unset _file
+    rm -f "$__CLEANUP_FILES__"
+  fi
+}
 need_cmd() {
   if ! check_cmd "$1"; then
     die "Required command '$1' not found on PATH"
   fi
+}
+trap_cleanups() {
+  set +e
+  trap_cleanup_directories
+  trap_cleanup_files
 }
 print_version() {
   local _program _version _verbose _sha _long_sha _date
@@ -480,6 +496,16 @@ print_version() {
   fi
   unset _program _version _verbose _sha _long_sha _date
 }
+warn() {
+  case "${TERM:-}" in
+    *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
+      printf -- "\033[1;31;40m!!! \033[1;37;40m%s\033[0m\n" "$1"
+      ;;
+    *)
+      printf -- "!!! %s\n" "$1"
+      ;;
+  esac
+}
 section() {
   case "${TERM:-}" in
     *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
@@ -489,6 +515,28 @@ section() {
       printf -- "--- %s\n" "$1"
       ;;
   esac
+}
+setup_cleanup_directories() {
+  if [ -z "${__CLEANUP_DIRECTORIES__:-}" ]; then
+    __CLEANUP_DIRECTORIES__="$(mktemp_file)"
+    if [ -z "$__CLEANUP_DIRECTORIES__" ]; then
+      return 1
+    fi
+    export __CLEANUP_DIRECTORIES__
+  fi
+}
+setup_cleanup_files() {
+  if [ -z "${__CLEANUP_FILES__:-}" ]; then
+    __CLEANUP_FILES__="$(mktemp_file)"
+    if [ -z "$__CLEANUP_FILES__" ]; then
+      return 1
+    fi
+    export __CLEANUP_FILES__
+  fi
+}
+setup_cleanups() {
+  setup_cleanup_directories
+  setup_cleanup_files
 }
 setup_traps() {
   local _sig
@@ -518,48 +566,17 @@ trap_cleanup_directories() {
     rm -f "$__CLEANUP_DIRECTORIES__"
   fi
 }
-trap_cleanup_files() {
-  set +e
-  if [ -n "${__CLEANUP_FILES__:-}" ] && [ -f "$__CLEANUP_FILES__" ]; then
-    local _file
-    while read -r _file; do
-      rm -f "$_file"
-    done <"$__CLEANUP_FILES__"
-    unset _file
-    rm -f "$__CLEANUP_FILES__"
-  fi
-}
-warn() {
-  case "${TERM:-}" in
-    *term | alacritty | rxvt | screen | screen-* | tmux | tmux-* | xterm-*)
-      printf -- "\033[1;31;40m!!! \033[1;37;40m%s\033[0m\n" "$1"
-      ;;
-    *)
-      printf -- "!!! %s\n" "$1"
-      ;;
-  esac
-}
 check_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
     return 1
   fi
 }
 cleanup_directory() {
-  if [ -z "${__CLEANUP_DIRECTORIES__:-}" ]; then
-    __CLEANUP_DIRECTORIES__="$(mktemp_file)"
-    if [ -z "$__CLEANUP_DIRECTORIES__" ]; then
-      return 1
-    fi
-  fi
+  setup_cleanup_directories
   echo "$1" >>"$__CLEANUP_DIRECTORIES__"
 }
 cleanup_file() {
-  if [ -z "${__CLEANUP_FILES__:-}" ]; then
-    __CLEANUP_FILES__="$(mktemp_file)"
-    if [ -z "$__CLEANUP_FILES__" ]; then
-      return 1
-    fi
-  fi
+  setup_cleanup_files
   echo "$1" >>"$__CLEANUP_FILES__"
 }
 die() {
