@@ -5,7 +5,7 @@
 #
 # * `@return 0` whether or not an error has occurred
 #
-# [`cleanup_file`]: #function.cleanup_file
+# [`cleanup_file`]: #cleanup_file
 #
 # # Global Variables
 #
