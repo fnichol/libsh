@@ -4,6 +4,14 @@
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+- add `setup_cleanup_directories` function
+- add `setup_cleanup_files` function
+- add `setup_cleanups` function
+- add `trap_cleanups` function
+- add `contrib/libsh-vendor.mk` Make task for use in projects
+
 ## [0.8.0] - 2021-04-11
 
 ### Added
@@ -93,7 +101,6 @@
 <!-- next-url -->
 
 [unreleased]: https://github.com/fnichol/libsh/compare/v0.8.0...HEAD
-
 [0.8.0]: https://github.com/fnichol/libsh/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/fnichol/libsh/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/fnichol/libsh/compare/v0.5.0...v0.6.0
