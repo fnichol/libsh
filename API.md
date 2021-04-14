@@ -465,6 +465,124 @@ Basic usage:
 section "Building project"
 ```
 
+## setup_cleanup_directories
+
+Sets up state to track directories for later cleanup in a trap handler.
+
+This function is typically used in combination with [`cleanup_directory`] and
+[`trap_cleanup_directories`].
+
+- `@return 0` if successful
+- `@return 1` if a temp file could not be created
+
+### Global Variables
+
+- `__CLEANUP_DIRECTORIES__` used to track the collection of directories to clean
+  up whose value is a file. If not declared or set, this function will set it
+  up.
+
+### Examples
+
+Basic usage:
+
+```sh
+setup_cleanup_directories
+```
+
+Used with [`cleanup_directory`], [`setup_traps`], and
+[`trap_cleanup_directories`]:
+
+```sh
+setup_cleanup_directories
+setup_traps trap_cleanup_directories
+
+dir="$(mktemp_directory)"
+cleanup_directory "$dir"
+# do work on directory, etc.
+```
+
+[`cleanup_file`]: #cleanup_file
+[`setup_traps`]: #setup_traps
+[`trap_cleanup_directories`]: #trap_cleanup_directories
+
+## setup_cleanup_files
+
+Sets up state to track files for later cleanup in a trap handler.
+
+This function is typically used in combination with [`cleanup_file`] and
+[`trap_cleanup_files`].
+
+- `@return 0` if successful
+- `@return 1` if a temp file could not be created
+
+### Global Variables
+
+- `__CLEANUP_FILES__` used to track the collection of files to clean up whose
+  value is a file. If not declared or set, this function will set it up.
+
+### Examples
+
+Basic usage:
+
+```sh
+setup_cleanup_files
+```
+
+Used with [`cleanup_file`], [`setup_traps`], and [`trap_cleanup_files`]:
+
+```sh
+setup_cleanup_files
+setup_traps trap_cleanup_files
+
+file="$(mktemp_file)"
+cleanup_file "$file"
+# do work on file, etc.
+```
+
+[`cleanup_file`]: #cleanup_file
+[`setup_traps`]: #setup_traps
+[`trap_cleanup_files`]: #trap_cleanup_files
+
+## setup_cleanups
+
+Sets up state to track files and directories for later cleanup in a trap
+handler.
+
+This function is typically used in combination with [`cleanup_file`] and
+[`cleanup_directory`] as well as [`trap_cleanups`].
+
+- `@return 0` if successful
+- `@return 1` if the setup was not successful
+
+### Examples
+
+Basic usage:
+
+```sh
+setup_cleanups
+```
+
+Used with [`cleanup_directory`], [`cleanup_file`], [`setup_traps`], and
+[`trap_cleanups`]:
+
+```sh
+setup_cleanups
+setup_traps trap_cleanups
+
+file="$(mktemp_file)"
+cleanup_file "$file"
+# do work on file, etc.
+
+dir="$(mktemp_directory)"
+cleanup_directory "$dir"
+# do work on directory, etc.
+```
+
+[`cleanup_directory`]: #cleanup_directory
+[`cleanup_file`]: #cleanup_file
+[`setup_traps`]: #setup_traps
+[`trap_cleanups`]: #trap_cleanups
+
 ## setup_traps
 
 Sets up traps for `EXIT` and common signals with the given cleanup function.
@@ -548,6 +666,32 @@ file="$(mktemp_file)"
 cleanup_file "$file"
 # do work on file, etc.
 ```
+
+## trap_cleanups
+
+Removes any tracked files and directories registered via [`cleanup_file`] and
+[`cleanup_directory`] respectively.
+
+- `@return 0` whether or not an error has occurred
+
+[`cleanup_directory`]: #cleanup_directory
+[`cleanup_file`]: #cleanup_file
+
+### Examples
+
+Basic usage:
+
+```sh
+trap trap_cleanups 1 2 3 15 ERR EXIT
+```
+
+Used with [`setup_traps`]:
+
+```sh
+setup_traps trap_cleanups
+```
+
+[`setup_traps`]: #setup_traps
 
 ## warn
 

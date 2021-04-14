@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-. "lib/mktemp_file.sh"
+. "lib/setup_cleanup_directories.sh"
 
 # Tracks a directory for later cleanup in a trap handler.
 #
@@ -14,7 +14,7 @@
 # * `@return 0` if successful
 # * `@return 1` if a temp file could not be created
 #
-# [`trap_cleanup_directories`]: #function.trap_cleanup_directories
+# [`trap_cleanup_directories`]: #trap_cleanup_directories
 #
 # # Global Variables
 #
@@ -32,15 +32,6 @@
 # # do work on directory, etc.
 # ```
 cleanup_directory() {
-  # If a tempfile hasn't been setup yet, create it
-  if [ -z "${__CLEANUP_DIRECTORIES__:-}" ]; then
-    __CLEANUP_DIRECTORIES__="$(mktemp_file)"
-
-    # If the result string is empty, tempfile wasn't created so report failure
-    if [ -z "$__CLEANUP_DIRECTORIES__" ]; then
-      return 1
-    fi
-  fi
-
+  setup_cleanup_directories
   echo "$1" >>"$__CLEANUP_DIRECTORIES__"
 }
