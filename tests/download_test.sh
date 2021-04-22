@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# shellcheck disable=SC2039
+# shellcheck disable=SC3043
 
 # shellcheck source=tests/test_helpers.sh
 . "${0%/*}/test_helpers.sh"

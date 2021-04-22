@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-# shellcheck disable=SC2039
 
 . "lib/die.sh"
 . "lib/indent.sh"
