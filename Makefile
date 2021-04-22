@@ -38,7 +38,9 @@ build/libsh.%-minified.sh: build/libsh.%.sh
 build/libsh.%.sh: lib/*.sh
 	@echo "--- $@"
 	mkdir -p build
-	awk -f support/compile.awk distrib/$(@F) > $@
+	awk \
+		-v NIGHTLY_BUILD="$${NIGHTLY_BUILD:-}" \
+		-f support/compile.awk distrib/$(@F) > $@
 
 build/libsh.sh: build/libsh.full.sh
 	@echo "--- $@"
@@ -46,7 +48,9 @@ build/libsh.sh: build/libsh.full.sh
 
 build/install.sh: contrib/install.sh build/libsh.full-minified.sh
 	@echo "--- $@"
-	awk -f support/compile-install.awk $< $(word 2,$^) > $@
+	awk \
+		-v NIGHTLY_BUILD="$${NIGHTLY_BUILD:-}" \
+		-f support/compile-install.awk $< $(word 2,$^) > $@
 	chmod 755 $@
 
 test-libsh.%-minified.sh: build/libsh.%-minified.sh
