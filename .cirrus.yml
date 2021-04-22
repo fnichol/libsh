@@ -98,7 +98,11 @@ build_libs_task:
     - tests
   container:
     dockerfile: .ci/Dockerfile.ci
-  build_script: make build
+  build_script: |
+    if [ "${CIRRUS_TAG:-}" = "nightly" ]; then
+      export NIGHTLY_BUILD="$(date -u +%F)"
+    fi
+    make build
   checksums_script: |
     cd build
     distribs="$(ls *.sh)"

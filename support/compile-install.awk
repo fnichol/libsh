@@ -44,6 +44,10 @@ function setup_vars(distrib, _arr, _size) {
     if (getline <"VERSION.txt" > 0) {
         vars["@@version@@"] = $1
     }
+    if (NIGHTLY_BUILD) {
+        _size = split(vars["@@version@@"], _arr, "-")
+        vars["@@version@@"] = _arr[1] "-nightly." NIGHTLY_BUILD
+    }
     if ((("git " "show -s --format=%H") | getline) > 0) {
         vars["@@commit_hash@@"] = $1
     }
