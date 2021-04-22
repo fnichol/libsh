@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# shellcheck disable=SC2039
+# shellcheck disable=SC3043
 
 print_usage() {
   local program version author
@@ -30,7 +30,7 @@ print_usage() {
                                       [values: vendor, insert]
                                       [default: vendor]
         -r, --release=<RELEASE>       Release version
-                                      [examples: latest, 1.2.3, main]
+                                      [examples: latest, 1.2.3, nightly]
                                       [default: latest]
         -t, --target=<TARGET>         Target directory or file for installation
                                       [examples: /tmp/libsh.sh, file.txt]
@@ -65,11 +65,11 @@ main() {
 
   local program version author sha sha_long date
   program="install.sh"
-  version="0.9.0"
+  version="0.10.0"
   author="Fletcher Nichol <fnichol@nichol.ca>"
-  sha="e155f96"
-  sha_long="e155f96bc281060342da4a19c26bf896f47de09c"
-  date="2021-04-14"
+  sha="9de10a0"
+  sha_long="9de10a0a2b17dc5b56b7759c6c45669ed58ba0ba"
+  date="2021-04-22"
 
   # Parse CLI arguments and set local variables
   parse_cli_args "$program" "$version" "$author" "$sha" "$sha_long" "$date" "$@"
@@ -231,9 +231,12 @@ download_libsh() {
   distrib="$2"
   target="$3"
   repo="https://github.com/fnichol/libsh"
+  if [ "$release" != "nightly" ]; then
+    release="v$release"
+  fi
 
   download \
-    "$repo/releases/download/v${release}/libsh.${distrib}.sh" \
+    "$repo/releases/download/$release/libsh.${distrib}.sh" \
     "$target"
 }
 
@@ -402,13 +405,13 @@ version_ge() {
 # --------
 # project: https://github.com/fnichol/libsh
 # author: Fletcher Nichol <fnichol@nichol.ca>
-# version: 0.9.0
+# version: 0.10.0
 # distribution: libsh.full-minified.sh
-# commit-hash: e155f96bc281060342da4a19c26bf896f47de09c
-# commit-date: 2021-04-14
-# artifact: https://github.com/fnichol/libsh/releases/download/v0.9.0/libsh.full.sh
-# source: https://github.com/fnichol/libsh/tree/v0.9.0
-# archive: https://github.com/fnichol/libsh/archive/v0.9.0.tar.gz
+# commit-hash: 9de10a0a2b17dc5b56b7759c6c45669ed58ba0ba
+# commit-date: 2021-04-22
+# artifact: https://github.com/fnichol/libsh/releases/download/v0.10.0/libsh.full.sh
+# source: https://github.com/fnichol/libsh/tree/v0.10.0
+# archive: https://github.com/fnichol/libsh/archive/v0.10.0.tar.gz
 #
 if [ -n "${KSH_VERSION:-}" ]; then
   eval "local() { return 0; }"
