@@ -171,7 +171,7 @@ publish_github_release_task:
 
 publish_install_sh_task:
   name: publish-install-sh
-  only_if: $CIRRUS_TAG != ''
+  only_if: $CIRRUS_TAG =~ 'v.*'
   depends_on:
     - publish-github-release
   container:
@@ -194,3 +194,14 @@ release_finished_task:
     dockerfile: .ci/Dockerfile.ci
   clone_script: mkdir -p "$CIRRUS_WORKING_DIR"
   success_script: /bin/true
+
+trigger_nightly_release_task:
+  name: trigger-nightly-release
+  only_if: $CIRRUS_CRON == 'nightly'
+  container:
+    image: alpine:3
+  env:
+    GITHUB_TOKEN: ENCRYPTED[ecc4ca0e5df9225981292126d56d588b2c2ccbc2fd73ad4fc92696cf6ef2613f03b7776b2b1c4fd3586381c0a796f041]
+  install_dependencies_script: apk add curl git jo jq
+  trigger_release_script:
+    ./.ci/cirrus-release.sh gh_update_tag "$CIRRUS_REPO_FULL_NAME" nightly
