@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# shellcheck disable=SC2039
+# shellcheck disable=SC3043
 
 # Sets up traps for `EXIT` and common signals with the given cleanup function.
 #
