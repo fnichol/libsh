@@ -30,7 +30,7 @@ print_usage() {
                                       [values: vendor, insert]
                                       [default: vendor]
         -r, --release=<RELEASE>       Release version
-                                      [examples: latest, 1.2.3, main]
+                                      [examples: latest, 1.2.3, nightly]
                                       [default: latest]
         -t, --target=<TARGET>         Target directory or file for installation
                                       [examples: /tmp/libsh.sh, file.txt]
@@ -231,9 +231,12 @@ download_libsh() {
   distrib="$2"
   target="$3"
   repo="https://github.com/fnichol/libsh"
+  if [ "$release" != "nightly" ]; then
+    release="v$release"
+  fi
 
   download \
-    "$repo/releases/download/v${release}/libsh.${distrib}.sh" \
+    "$repo/releases/download/$release/libsh.${distrib}.sh" \
     "$target"
 }
 
