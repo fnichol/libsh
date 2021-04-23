@@ -205,7 +205,7 @@ trigger_nightly_release_task:
   container:
     image: alpine:3
   env:
-    GITHUB_TOKEN: ENCRYPTED[ecc4ca0e5df9225981292126d56d588b2c2ccbc2fd73ad4fc92696cf6ef2613f03b7776b2b1c4fd3586381c0a796f041]
+    GITHUB_TOKEN: ENCRYPTED[7015be161905de99d7ba67dcd901f207c385a605e753f2b396728c00d114a3821061f9f05611682a57836610b0f7d38a]
   install_dependencies_script: apk add curl git jo jq
   trigger_release_script:
     ./.ci/cirrus-release.sh gh_update_tag "$CIRRUS_REPO_FULL_NAME" nightly
