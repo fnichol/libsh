@@ -15,6 +15,8 @@
 # * `__CLEANUP_DIRECTORIES__` used to track the collection of directories to
 # clean up whose value is a file. If not declared or set, this function will
 # set it up.
+# * `__CLEANUP_DIRECTORIES_SETUP__` used to track if the
+# `__CLEANUP_DIRECTORIES__` variable has been set up for the current process
 #
 # # Examples
 #
@@ -40,6 +42,12 @@
 # [`setup_traps`]: #setup_traps
 # [`trap_cleanup_directories`]: #trap_cleanup_directories
 setup_cleanup_directories() {
+  if [ "${__CLEANUP_DIRECTORIES_SETUP__:-}" != "$$" ]; then
+    unset __CLEANUP_DIRECTORIES__
+    __CLEANUP_DIRECTORIES_SETUP__="$$"
+    export __CLEANUP_DIRECTORIES_SETUP__
+  fi
+
   # If a tempfile hasn't been setup yet, create it
   if [ -z "${__CLEANUP_DIRECTORIES__:-}" ]; then
     __CLEANUP_DIRECTORIES__="$(mktemp_file)"
