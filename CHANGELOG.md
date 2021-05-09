@@ -4,6 +4,11 @@
 
 ## [Unreleased] - ReleaseDate
 
+### Fixed
+
+- ensure `setup_cleanup_directories` & `setup_cleanup_files` are isolated to
+  their own process
+
 ## [0.10.0] - 2021-04-22
 
 ### Added
@@ -113,7 +118,6 @@
 <!-- next-url -->
 
 [unreleased]: https://github.com/fnichol/libsh/compare/v0.10.0...HEAD
-
 [0.10.0]: https://github.com/fnichol/libsh/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/fnichol/libsh/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/fnichol/libsh/compare/v0.7.0...v0.8.0
