@@ -490,6 +490,8 @@ This function is typically used in combination with [`cleanup_directory`] and
 - `__CLEANUP_DIRECTORIES__` used to track the collection of directories to clean
   up whose value is a file. If not declared or set, this function will set it
   up.
+- `__CLEANUP_DIRECTORIES_SETUP__` used to track if the `__CLEANUP_DIRECTORIES__`
+  variable has been set up for the current process
 
 ### Examples
 
@@ -529,6 +531,8 @@ This function is typically used in combination with [`cleanup_file`] and
 
 - `__CLEANUP_FILES__` used to track the collection of files to clean up whose
   value is a file. If not declared or set, this function will set it up.
+- `__CLEANUP_FILES_SETUP__` used to track if the `__CLEANUP_FILES__` variable
+  has been set up for the current process
 
 ### Examples
 
