@@ -65,11 +65,11 @@ main() {
 
   local program version author sha sha_long date
   program="install.sh"
-  version="0.10.0"
+  version="0.10.1"
   author="Fletcher Nichol <fnichol@nichol.ca>"
-  sha="9de10a0"
-  sha_long="9de10a0a2b17dc5b56b7759c6c45669ed58ba0ba"
-  date="2021-04-22"
+  sha="4613477"
+  sha_long="46134771903ba66967666ca455f73ffc10dd0a03"
+  date="2021-05-08"
 
   # Parse CLI arguments and set local variables
   parse_cli_args "$program" "$version" "$author" "$sha" "$sha_long" "$date" "$@"
@@ -405,13 +405,13 @@ version_ge() {
 # --------
 # project: https://github.com/fnichol/libsh
 # author: Fletcher Nichol <fnichol@nichol.ca>
-# version: 0.10.0
+# version: 0.10.1
 # distribution: libsh.full-minified.sh
-# commit-hash: 9de10a0a2b17dc5b56b7759c6c45669ed58ba0ba
-# commit-date: 2021-04-22
-# artifact: https://github.com/fnichol/libsh/releases/download/v0.10.0/libsh.full.sh
-# source: https://github.com/fnichol/libsh/tree/v0.10.0
-# archive: https://github.com/fnichol/libsh/archive/v0.10.0.tar.gz
+# commit-hash: 46134771903ba66967666ca455f73ffc10dd0a03
+# commit-date: 2021-05-08
+# artifact: https://github.com/fnichol/libsh/releases/download/v0.10.1/libsh.full.sh
+# source: https://github.com/fnichol/libsh/tree/v0.10.1
+# archive: https://github.com/fnichol/libsh/archive/v0.10.1.tar.gz
 #
 if [ -n "${KSH_VERSION:-}" ]; then
   eval "local() { return 0; }"
@@ -520,6 +520,11 @@ section() {
   esac
 }
 setup_cleanup_directories() {
+  if [ "${__CLEANUP_DIRECTORIES_SETUP__:-}" != "$$" ]; then
+    unset __CLEANUP_DIRECTORIES__
+    __CLEANUP_DIRECTORIES_SETUP__="$$"
+    export __CLEANUP_DIRECTORIES_SETUP__
+  fi
   if [ -z "${__CLEANUP_DIRECTORIES__:-}" ]; then
     __CLEANUP_DIRECTORIES__="$(mktemp_file)"
     if [ -z "$__CLEANUP_DIRECTORIES__" ]; then
@@ -529,6 +534,11 @@ setup_cleanup_directories() {
   fi
 }
 setup_cleanup_files() {
+  if [ "${__CLEANUP_FILES_SETUP__:-}" != "$$" ]; then
+    unset __CLEANUP_FILES__
+    __CLEANUP_FILES_SETUP__="$$"
+    export __CLEANUP_FILES_SETUP__
+  fi
   if [ -z "${__CLEANUP_FILES__:-}" ]; then
     __CLEANUP_FILES__="$(mktemp_file)"
     if [ -z "$__CLEANUP_FILES__" ]; then
