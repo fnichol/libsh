@@ -129,7 +129,7 @@ create_github_release_task:
   container:
     dockerfile: .ci/Dockerfile.ci
   env:
-    GITHUB_TOKEN: ENCRYPTED[7015be161905de99d7ba67dcd901f207c385a605e753f2b396728c00d114a3821061f9f05611682a57836610b0f7d38a]
+    GITHUB_TOKEN: ENCRYPTED[87d044b1e0dfc41f65334518692837ee920a6bcf614f7845103ce64158da8126be6410a002396029705a2a5cf46b2e19]
   create_github_release_script: |
     if ! upload_url="$(
       ./.ci/cirrus-release.sh gh_create_version_release \
@@ -168,7 +168,7 @@ publish_github_release_task:
   container:
     dockerfile: .ci/Dockerfile.ci
   env:
-    GITHUB_TOKEN: ENCRYPTED[7015be161905de99d7ba67dcd901f207c385a605e753f2b396728c00d114a3821061f9f05611682a57836610b0f7d38a]
+    GITHUB_TOKEN: ENCRYPTED[87d044b1e0dfc41f65334518692837ee920a6bcf614f7845103ce64158da8126be6410a002396029705a2a5cf46b2e19]
   publish_release_script: |
     ./.ci/cirrus-release.sh gh_publish_release \
       "$CIRRUS_REPO_FULL_NAME" "$CIRRUS_TAG" CHANGELOG.md
@@ -181,7 +181,7 @@ publish_install_sh_task:
   container:
     dockerfile: .ci/Dockerfile.ci
   env:
-    GITHUB_TOKEN: ENCRYPTED[7015be161905de99d7ba67dcd901f207c385a605e753f2b396728c00d114a3821061f9f05611682a57836610b0f7d38a]
+    GITHUB_TOKEN: ENCRYPTED[87d044b1e0dfc41f65334518692837ee920a6bcf614f7845103ce64158da8126be6410a002396029705a2a5cf46b2e19]
   publish_install_sh_script: |
     ./.ci/cirrus-release.sh gh_download \
       "$CIRRUS_REPO_FULL_NAME" "$CIRRUS_TAG" install.sh
@@ -205,7 +205,7 @@ trigger_nightly_release_task:
   container:
     image: alpine:3
   env:
-    GITHUB_TOKEN: ENCRYPTED[7015be161905de99d7ba67dcd901f207c385a605e753f2b396728c00d114a3821061f9f05611682a57836610b0f7d38a]
+    GITHUB_TOKEN: ENCRYPTED[87d044b1e0dfc41f65334518692837ee920a6bcf614f7845103ce64158da8126be6410a002396029705a2a5cf46b2e19]
   install_dependencies_script: apk add curl git jo jq
   trigger_release_script:
     ./.ci/cirrus-release.sh gh_update_tag "$CIRRUS_REPO_FULL_NAME" nightly
