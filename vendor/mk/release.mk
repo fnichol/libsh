@@ -20,9 +20,9 @@ release-prepare: clean prepush release-bump-version release-update-changelog \
 	@echo "1. Create a pull request for the release branch by visiting:"
 	@echo "       $(REPO)/pull/new/release-$$(cat tmp/LAST_VERSION.txt)"
 	@echo "2. Wait for CI to turn green"
-	@echo "3. Comment on the pull request with \`bors merge\`"
-	@echo "4. Wait for bors to integrate, test, and merge the pull request"
-	@echo "5. Locally run \`git push origin v$$(cat tmp/LAST_VERSION.txt)\`"
+	@echo "3. Locally run \`git push origin v$$(cat tmp/LAST_VERSION.txt)\`"
+	@echo "4. Comment on the pull request with \`bors merge\`"
+	@echo "5. Wait for bors to integrate, test, and merge the pull request"
 	@echo ""
 .PHONY: release-prepare
 
