@@ -51,7 +51,7 @@ test_task:
           - SHELL_BIN: ksh
           - SHELL_BIN: zsh
       macos_instance:
-        image: catalina-base
+        image: ghcr.io/cirruslabs/macos-sonoma-base:latest
       setup_script: |
         if [ -n "${PKG:-}" ]; then brew install "$PKG"; fi
         if [ "$SHELL_BIN" = "bash-3" ]; then
@@ -82,7 +82,7 @@ test_task:
           - SHELL_BIN: zsh
             PKG: shells/zsh
       freebsd_instance:
-        image_family: freebsd-12-2
+        image_family: freebsd-14-0
       setup_script: |
         pkg install --yes devel/git devel/gmake textproc/gsed
         if [ -n "${PKG:-}" ]; then pkg install --yes "$PKG"; fi

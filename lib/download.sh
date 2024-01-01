@@ -9,9 +9,9 @@
 # Downloads the contents at the given URL to the given local file.
 #
 # This implementation attempts to use the `curl` program with a fallback to the
-# `wget` program and a final fallback to the `ftp` program. The first download
-# program to succeed is used and if all fail, this function returns a non-zero
-# code.
+# `wget` program with a fallback to the `ftp` program and a final fallback to
+# the `fetch` program. The first download program to succeed is used and if all
+# fail, this function returns a non-zero code.
 #
 # * `@param [String]` download URL
 # * `@param [String]` destination file
@@ -91,6 +91,26 @@ download() {
     else
       local _e
       _e="ftp failed to download file, perhaps ftp doesn't have"
+      _e="$_e SSL support and/or no CA certificates are present?"
+      warn "$_e"
+      unset _e
+    fi
+  fi
+
+  # Attempt to download with fetch, if found. If successful, quick return
+  if check_cmd fetch; then
+    info "Downloading $_url to $_dst (fetch)"
+    _orig_flags="$-"
+    set +e
+    fetch -qR "$_url" -o "$_dst"
+    _code="$?"
+    set "-$(echo "$_orig_flags" | sed s/s//g)"
+    if [ $_code -eq 0 ]; then
+      unset _url _dst _code _orig_flags
+      return 0
+    else
+      local _e
+      _e="fetch failed to download file, perhaps fetch doesn't have"
       _e="$_e SSL support and/or no CA certificates are present?"
       warn "$_e"
       unset _e
