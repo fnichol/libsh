@@ -51,7 +51,7 @@ test_task:
           - SHELL_BIN: ksh
           - SHELL_BIN: zsh
       macos_instance:
-        image: catalina-base
+        image: ghcr.io/cirruslabs/macos-sonoma-base:latest
       setup_script: |
         if [ -n "${PKG:-}" ]; then brew install "$PKG"; fi
         if [ "$SHELL_BIN" = "bash-3" ]; then
