@@ -82,7 +82,7 @@ test_task:
           - SHELL_BIN: zsh
             PKG: shells/zsh
       freebsd_instance:
-        image_family: freebsd-12-2
+        image_family: freebsd-14-0
       setup_script: |
         pkg install --yes devel/git devel/gmake textproc/gsed
         if [ -n "${PKG:-}" ]; then pkg install --yes "$PKG"; fi
